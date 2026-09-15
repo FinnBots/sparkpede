@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Sparkpede — Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum:#5f4c57; --plum-deep:#3e323a; --amber:#f2a03d; --electric:#3a6ff7;
+    --sip:#a0e8f0; --cam:#a0f0c0;
+    --peach:#f5c8a0; --soft:#fdf3e7; --ink:#3e323a; --muted:#8a7a82;
+    --r-md:12px; --r-lg:16px; --r-xl:22px;
+    --sh1:0 1px 2px rgba(62,50,58,.12); --sh2:0 4px 14px rgba(62,50,58,.16);
+    --disp:'Jersey 15',system-ui,sans-serif; --body:'Plus Jakarta Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100dvh}
+  body{
+    font-family:var(--body); color:var(--ink);
+    background:radial-gradient(120% 60% at 50% 0%, var(--soft), var(--peach));
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:100dvh}
+
+  .topbar{display:flex;align-items:center;gap:12px;min-height:40px}
+  .avatar{width:38px;height:38px;border-radius:50%;background:#1a1030;box-shadow:var(--sh1);
+          object-fit:cover;flex:0 0 auto}
+  .pill{font-family:var(--disp);font-size:15px;letter-spacing:.5px;color:#fff;background:var(--plum);
+        padding:2px 12px;border-radius:999px;box-shadow:var(--sh1);white-space:nowrap}
+  .title{font-family:var(--disp);font-size:26px;line-height:1;color:var(--plum-deep);flex:1}
+
+  .note{font-size:12.5px;color:var(--plum-deep);background:rgba(255,255,255,.55);
+        border-radius:var(--r-md);padding:8px 12px;text-align:center;box-shadow:var(--sh1);line-height:1.45}
+  .note b{font-weight:700}
+  .updated{font-size:11px;color:var(--muted);text-align:center}
+
+  .board{background:rgba(255,255,255,.6);border-radius:var(--r-lg);box-shadow:var(--sh1);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{font-family:var(--disp);font-size:12px;letter-spacing:.5px;color:var(--muted);text-align:left;
+           padding:9px 10px;border-bottom:1px solid rgba(95,76,87,.15)}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody td{padding:9px 10px;border-bottom:1px solid rgba(95,76,87,.08)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:nth-child(1) .rank{color:var(--amber)}
+  .rank{font-family:var(--disp);font-size:18px;color:var(--plum-deep);width:34px}
+  .who{font-family:ui-monospace,monospace;color:var(--plum);cursor:pointer}
+  .who .h{color:var(--amber);font-family:var(--body);font-size:11px;margin-left:5px}
+  .score{font-family:var(--disp);font-size:18px;color:var(--plum-deep)}
+  .empty{padding:22px;text-align:center;color:var(--muted);font-size:13px}
+
+  .foot{text-align:center;margin-top:auto;padding-top:8px}
+  .foot .tag{font-family:var(--disp);font-size:13px;color:var(--muted);letter-spacing:.5px}
+  .foot .links{font-size:12px;margin-top:2px}
+  .foot a{color:var(--muted);text-decoration:none;margin:0 6px}
+  .foot a:hover{color:var(--plum)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <img class="avatar" src="https://arweave.net/_cPSCheRvzVBlZK7QwM-3nXtteMdBbUn-zJhbGRlMmo/106.png" alt="" onerror="this.style.visibility='hidden'">
+      <span class="pill">BOT GAMES</span>
+      <h1 class="title">SPARKPEDE</h1>
+    </header>
+
+    <div class="note"><b>A fun ranking — not verified.</b> Sparkpede is real-time and unreplayable, so scores are recorded, not checked. Ranked by <b>score</b>, fastest time breaks a tie. Bot holders score ×1.5.</div>
+    <div class="updated" id="updated">Loading…</div>
+
+    <div class="board">
+      <table>
+        <thead>
+          <tr>
+            <th class="rank">#</th>
+            <th>Player</th>
+            <th class="num">Score</th>
+            <th class="num">Waves</th>
+            <th class="num">Time</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="5" class="empty">Loading the board…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="foot">
+      <div class="tag">a FinnBots game</div>
+      <div class="links">
+        <a href="https://spark.finnstergram.com/">▶ Play Sparkpede</a>·
+        <a href="https://magiceden.io/marketplace/finnbot" target="_blank" rel="noopener">Buy a Bot</a>·
+        <a href="https://finnstergram.com/games" target="_blank" rel="noopener">More games</a>
+      </div>
+    </footer>
+  </div>
+
+<script>
+"use strict";
+/* Sparkpede leaderboard. Reads the scanner-written leaderboard_sprk.csv
+   SAME-ORIGIN (committed beside this page). Zero RPC / zero wallet / zero
+   Worker calls — the holder ×1.5 is already baked into score_adjusted by the
+   scanner. Columns are read BY NAME off the header so scanner column
+   reordering can't break it:
+     rank,wallet,score_raw,score_adjusted,waves,time_ms,bot_holder,
+     score_signature,entry_signature
+   Records, does NOT verify. */
+
+function parseCSV(text){
+  var lines=text.replace(/\r/g,'').split('\n').filter(function(l){ return l.length; });
+  if(!lines.length) return [];
+  var header=lines[0].split(',');
+  var idx={}; header.forEach(function(h,i){ idx[h.trim()]=i; });
+  var out=[];
+  for(var i=1;i<lines.length;i++){
+    var c=lines[i].split(',');
+    out.push({
+      wallet:        c[idx['wallet']],
+      score_raw:     Number(c[idx['score_raw']]),
+      score_adjusted:Number(c[idx['score_adjusted']]),
+      waves:         Number(c[idx['waves']]),
+      time_ms:       Number(c[idx['time_ms']]),
+      bot_holder:    (c[idx['bot_holder']]||'').trim().toLowerCase()
+    });
+  }
+  return out;
+}
+
+function shortAddr(a){ return a ? a.slice(0,4)+'…'+a.slice(-4) : '—'; }
+function mmss(ms){ var t=Math.floor((ms||0)/1000); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
+
+function render(rows){
+  var tb=document.getElementById('rows');
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="empty">No runs yet — be the first to zap the Sparkpede.</td></tr>'; return; }
+  // score primary (desc), fastest time tiebreak (asc)
+  rows.sort(function(a,b){ return (b.score_adjusted-a.score_adjusted) || (a.time_ms-b.time_ms); });
+  var html='';
+  rows.forEach(function(r,i){
+    var holder = (r.bot_holder==='yes'||r.bot_holder==='true'||r.bot_holder==='1');
+    html+='<tr>'+
+      '<td class="rank">'+(i+1)+'</td>'+
+      '<td class="who" title="Tap to copy" data-full="'+(r.wallet||'')+'">'+shortAddr(r.wallet)+(holder?'<span class="h">Bot ×1.5</span>':'')+'</td>'+
+      '<td class="num score">'+(isFinite(r.score_adjusted)?String(r.score_adjusted).padStart(6,'0'):'—')+'</td>'+
+      '<td class="num">'+(isFinite(r.waves)?r.waves:0)+'</td>'+
+      '<td class="num">'+mmss(r.time_ms)+'</td>'+
+    '</tr>';
+  });
+  tb.innerHTML=html;
+  Array.prototype.forEach.call(tb.querySelectorAll('.who'),function(el){
+    el.addEventListener('click',function(){ var f=el.getAttribute('data-full'); if(f&&navigator.clipboard){ navigator.clipboard.writeText(f); el.firstChild.textContent='copied'; setTimeout(function(){ el.firstChild.textContent=shortAddr(f); },900); } });
+  });
+}
+
+function load(){
+  fetch('leaderboard_sprk.csv?v='+Date.now(),{cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw new Error('no csv');
+      var lm=r.headers.get('Last-Modified');
+      document.getElementById('updated').textContent = lm ? ('Updated '+new Date(lm).toLocaleString('en-GB')) : 'Updated on each scanner run';
+      return r.text(); })
+    .then(function(t){ render(parseCSV(t)); })
+    .catch(function(){ document.getElementById('updated').textContent='Board updates on each scanner run.';
+      document.getElementById('rows').innerHTML='<tr><td colspan="5" class="empty">No runs recorded yet.</td></tr>'; });
+}
+load();
+</script>
+</body>
+</html>
