@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Sparkpede — a FinnBots game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum:#5f4c57; --plum-deep:#3e323a; --amber:#f2a03d; --electric:#3a6ff7;
+    --sip:#a0e8f0; --cam:#a0f0c0;
+    --peach:#f5c8a0; --soft:#fdf3e7; --ink:#3e323a; --muted:#8a7a82; --red:#c0392b;
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s6:24px;
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px;
+    --sh1:0 1px 2px rgba(62,50,58,.12); --sh2:0 4px 14px rgba(62,50,58,.16);
+    --disp:'Jersey 15',system-ui,sans-serif; --body:'Plus Jakarta Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100dvh;overflow:hidden;margin:0}
+  body{
+    font-family:var(--body); color:var(--ink);
+    background:radial-gradient(120% 80% at 50% 0%, var(--soft), var(--peach));
+    -webkit-font-smoothing:antialiased; user-select:none; -webkit-user-select:none;
+    touch-action:none;
+  }
+  .wrap{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;padding:var(--s3);gap:var(--s2)}
+
+  /* Topbar */
+  .topbar{display:flex;align-items:center;gap:var(--s3);min-height:34px}
+  .pill{font-family:var(--disp);font-size:15px;letter-spacing:.5px;color:#fff;background:var(--plum);
+        padding:2px var(--s3);border-radius:999px;box-shadow:var(--sh1);white-space:nowrap}
+  .title{font-family:var(--disp);font-size:26px;line-height:1;color:var(--plum-deep);
+         flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .iconbtn{appearance:none;border:0;background:#fff;color:var(--plum);width:32px;height:32px;
+           border-radius:50%;font-family:var(--disp);font-size:18px;box-shadow:var(--sh1);cursor:pointer}
+  .iconbtn:focus-visible{outline:3px solid var(--electric);outline-offset:2px}
+
+  /* Mode toggle (Free / Paid) — kid-safety: Paid is a deliberate opt-in */
+  .modebar{display:flex;gap:var(--s1);background:rgba(255,255,255,.5);border-radius:999px;
+           padding:3px;box-shadow:var(--sh1)}
+  .modepill{flex:1;appearance:none;border:0;cursor:pointer;font-family:var(--disp);font-size:14px;
+            padding:5px 10px;border-radius:999px;background:transparent;color:var(--muted)}
+  .modepill.active{background:var(--amber);color:var(--plum-deep)}
+  .modepill:disabled{opacity:.5;cursor:default}
+  .modepill:focus-visible{outline:2px solid var(--electric);outline-offset:2px}
+
+  /* Test banner */
+  .testBanner{background:var(--amber);color:#4a2c10;font-weight:700;text-align:center;
+              font-size:12px;padding:5px 10px;border-radius:var(--r-md)}
+  .testBanner.hidden{display:none}
+
+  /* Wallet bar (Paid only) */
+  .walletbar{display:none;flex-direction:column;gap:5px;background:rgba(255,255,255,.55);
+             border-radius:var(--r-md);padding:7px var(--s3);box-shadow:var(--sh1)}
+  body.mode-paid .walletbar{display:flex}
+  .walletrow{display:flex;align-items:center;gap:8px}
+  .walletrow .lbl{font-size:12px;color:var(--plum-deep);flex:1;line-height:1.3}
+  .connect-btn{appearance:none;border:0;cursor:pointer;font-family:var(--disp);font-size:14px;
+               background:var(--plum);color:#fff;padding:6px 16px;border-radius:999px;box-shadow:var(--sh1)}
+  .connect-btn:disabled{opacity:.6;cursor:default}
+  .wallet-status{font-size:12px;color:var(--muted);line-height:1.35}
+  .wallet-status.hidden{display:none}
+  .wallet-status.ok{color:var(--plum-deep)} .wallet-status.warn{color:var(--red)}
+  .wallet-status .addr{font-family:ui-monospace,monospace;color:var(--plum)}
+
+  /* Facts strip */
+  .facts{font-size:12.5px;color:var(--plum-deep);background:rgba(255,255,255,.55);
+         border-radius:var(--r-md);padding:6px var(--s3);text-align:center;min-height:30px;
+         display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:var(--sh1)}
+  .facts b{font-weight:700}
+  .dot-sep{opacity:.4}
+
+  /* Play surface */
+  .surface{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  canvas{
+    width:100%;height:auto;max-height:100%;
+    aspect-ratio:3/4; background:#1a1030; border-radius:var(--r-lg);
+    box-shadow:var(--sh2); image-rendering:pixelated; image-rendering:crisp-edges;
+    touch-action:none;
+  }
+
+  /* HUD */
+  .hud{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+       font-family:var(--disp);color:var(--plum-deep);background:rgba(255,255,255,.55);
+       border-radius:var(--r-md);padding:6px var(--s4);min-height:34px;box-shadow:var(--sh1)}
+  .hud .lab{font-size:12px;color:var(--muted);letter-spacing:1px}
+  .hud .val{font-size:20px;line-height:1}
+  .lives{display:inline-flex;gap:5px;align-items:center}
+  .life{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:var(--sh1)}
+  .life.off{background:rgba(0,0,0,.14);box-shadow:none}
+
+  /* Footer */
+  .foot{text-align:center;min-height:30px}
+  .foot .tag{font-family:var(--disp);font-size:13px;color:var(--muted);letter-spacing:.5px}
+  .foot .links{font-size:12px;margin-top:1px}
+  .foot a{color:var(--muted);text-decoration:none;margin:0 6px}
+  .foot a:hover{color:var(--plum)}
+  .foot a:focus-visible{outline:2px solid var(--electric);outline-offset:2px;border-radius:3px}
+
+  /* Overlays (never push) */
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+           background:rgba(42,34,48,.55);backdrop-filter:blur(2px);padding:var(--s4);z-index:20}
+  .overlay.show{display:flex}
+  /* The Paid start/run-over card (#paidOverlay) is a full-viewport modal (z-index 20).
+     Its own card tells the player to "Connect wallet first", so the mode pills and the
+     wallet bar must stay clickable ABOVE that backdrop in Paid mode — otherwise the
+     backdrop swallows the wallet-bar Connect tap and provider.connect() never fires. */
+  body.mode-paid .modebar,
+  body.mode-paid .walletbar{position:relative;z-index:21}
+  .card{background:var(--soft);border-radius:var(--r-xl);box-shadow:var(--sh2);
+        max-width:360px;width:100%;padding:var(--s6);text-align:center}
+  .card h2{font-family:var(--disp);font-size:30px;margin:0 0 var(--s2);color:var(--plum-deep)}
+  .card.win h2{color:var(--amber)}
+  .card p{font-size:13.5px;line-height:1.5;margin:var(--s2) 0;color:var(--plum-deep)}
+  .card .big{font-family:var(--disp);font-size:22px;color:var(--plum-deep);margin:var(--s3) 0}
+  .card .big span{color:var(--amber)}
+  .btn{appearance:none;border:0;font-family:var(--disp);font-size:18px;color:#fff;background:var(--plum);
+       padding:10px var(--s6);border-radius:999px;cursor:pointer;box-shadow:var(--sh1);margin-top:var(--s3)}
+  .btn:hover{background:var(--plum-deep)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn:focus-visible{outline:3px solid var(--electric);outline-offset:2px}
+  .rules{text-align:left}
+  .rules li{font-size:13px;line-height:1.55;margin:5px 0}
+  .safe{font-size:11.5px;color:var(--muted);margin-top:var(--s3)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+  /* Paid sheets (confirm gate + posted) */
+  .sheet{position:fixed;inset:0;background:rgba(42,34,48,.6);display:none;align-items:center;
+         justify-content:center;padding:var(--s4);z-index:30}
+  .sheet.show{display:flex}
+  .panel{width:100%;max-width:340px;background:var(--soft);border-radius:var(--r-xl);padding:var(--s6);
+         box-shadow:var(--sh2);text-align:center}
+  .panel h2{font-family:var(--disp);font-size:24px;margin:0 0 var(--s2);color:var(--plum-deep)}
+  .panel p{font-size:13px;color:var(--plum-deep);margin:0 0 var(--s4);line-height:1.5}
+  .panel p b{color:var(--plum-deep)}
+  .panel .again{appearance:none;border:0;cursor:pointer;font-family:var(--disp);font-size:16px;
+        background:var(--amber);color:#4a2c10;padding:11px var(--s6);border-radius:999px;display:block;
+        width:100%;margin-bottom:var(--s2);box-shadow:var(--sh1)}
+  .panel .ghostbtn{appearance:none;border:1px solid rgba(95,76,87,.25);cursor:pointer;font-family:var(--body);
+        font-weight:600;font-size:14px;background:transparent;color:var(--plum);padding:9px 18px;
+        border-radius:999px;display:block;width:100%;box-sizing:border-box;text-decoration:none;margin-bottom:var(--s2)}
+  .panel .ghostbtn:last-child{margin-bottom:0}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <span class="pill">BOT GAMES</span>
+      <h1 class="title">SPARKPEDE</h1>
+      <button class="iconbtn" id="infoBtn" aria-label="How to play">ⓘ</button>
+    </header>
+
+    <div class="modebar" role="tablist" aria-label="Play mode">
+      <button class="modepill active" id="modeFree" type="button" role="tab">Free play</button>
+      <button class="modepill" id="modePaid" type="button" role="tab">Paid · 25 OIL</button>
+    </div>
+
+    <div class="testBanner hidden" id="testBanner">🧪 TEST MODE — local validator, fake $OIL. No real value moves.</div>
+
+    <div class="walletbar" id="walletbar">
+      <div class="walletrow">
+        <span class="lbl">Paid — 25 OIL entry · fun leaderboard, not verified</span>
+        <button class="connect-btn" id="connectBtn" type="button">Connect</button>
+      </div>
+      <div class="wallet-status hidden" id="walletStatus"></div>
+    </div>
+
+    <div class="facts" id="facts">
+      <span>Free to play</span><span class="dot-sep">·</span>
+      <span>wallet-free</span><span class="dot-sep">·</span>
+      <span><b>pays nothing</b></span>
+    </div>
+
+    <main class="surface">
+      <canvas id="game" width="300" height="400" aria-label="Sparkpede play area. Bot 106 is the blaster at the foot of the field. Drag left, right, up and down to move him; sparks fire upward automatically. Zap the descending Sparkpede, spider, flea and scorpion before they reach you."></canvas>
+    </main>
+
+    <div class="hud" aria-live="polite">
+      <div><span class="lab">SCORE </span><span class="val" id="score">000000</span></div>
+      <div><span class="lab">LIVES </span><span class="lives" id="lives"></span></div>
+      <div><span class="lab">WAVE </span><span class="val" id="wave">01</span></div>
+    </div>
+
+    <footer class="foot">
+      <div class="tag">a FinnBots game</div>
+      <div class="links">
+        <a href="https://magiceden.io/marketplace/finnbot" target="_blank" rel="noopener">Buy a Bot</a>·
+        <a href="https://finnstergram.com/games" target="_blank" rel="noopener">More games</a>·
+        <a href="https://spark.finnstergram.com/leaderboard.html" target="_blank" rel="noopener">Leaderboard</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Rules overlay -->
+  <div class="overlay" id="rulesOverlay" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="card">
+      <h2 id="rulesTitle">HOW TO PLAY</h2>
+      <ul class="rules">
+        <li><b>Drag</b> anywhere in the bottom band (or use ← → ↑ ↓) to move 106 — sparks <b>fire on their own</b>.</li>
+        <li>The <b>Sparkpede</b> winds down through the mushrooms. Shoot a segment and it becomes a mushroom, <b>splitting</b> the chain — heads score most.</li>
+        <li>Mushrooms take <b>4 hits</b>. They steer the pede and clutter your band.</li>
+        <li>Watch the <b>spider</b> (roams your band), the <b>flea</b> (drops straight down) and the <b>scorpion</b> (poisons mushrooms — a poisoned mushroom sends the pede plunging).</li>
+        <li>Clear the whole pede for a <b>faster, longer wave</b>. It speeds up every wave and never stops — climb the leaderboard by score.</li>
+      </ul>
+      <p class="safe">Free play never touches a wallet, never asks for a seed phrase, and never moves a Bot.</p>
+      <button class="btn" id="rulesClose">Got it</button>
+    </div>
+  </div>
+
+  <!-- Game-over overlay (FREE only) -->
+  <div class="overlay" id="overOverlay" role="dialog" aria-modal="true" aria-labelledby="overTitle">
+    <div class="card" id="overCard">
+      <h2 id="overTitle">RUN OVER</h2>
+      <div class="big">SCORE <span id="oScore">0</span></div>
+      <p>Waves <b id="oWaves">00</b> · Time <b id="oTime">0:00</b></p>
+      <button class="btn" id="retryBtn">Tap to retry</button>
+    </div>
+  </div>
+
+  <!-- Paid overlay (start card + run-over card; innerHTML rewritten by the Paid controller) -->
+  <div class="overlay" id="paidOverlay" role="dialog" aria-modal="true"></div>
+
+  <!-- Kid-safety confirm gate (shown BEFORE any wallet code runs) -->
+  <div class="sheet" id="confirmSheet"><div class="panel">
+    <h2>Play Sparkpede — Paid</h2>
+    <p>One entry = one run (3 lives, no continues). Costs <b>25 OIL</b> to the treasury (a sink). Pays nothing out — you're playing for a leaderboard spot. Bot holders: score ×1.5.<br/><br/>A <b>fun ranking</b> — not verified.</p>
+    <button class="again" id="confirmEnter" type="button">Connect &amp; Pay</button>
+    <button class="ghostbtn" id="confirmBack" type="button">Cancel</button>
+  </div></div>
+
+  <!-- Score-posted sheet -->
+  <div class="sheet" id="postedSheet"><div class="panel">
+    <h2>Score posted!</h2>
+    <p id="posted-text"></p>
+    <a class="ghostbtn" id="viewLb" href="https://spark.finnstergram.com/leaderboard.html" target="_blank" rel="noopener">View leaderboard →</a>
+    <button class="again" id="againBtn" type="button">Play again (25 OIL)</button>
+  </div></div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   SPARKPEDE — FinnBots (Atari Centipede, faithful).  ENGINE (Free gameplay).
+   Bot 106 is the BLASTER at the foot of the field. You only MOVE him inside the
+   bottom band (drag / arrows); sparks auto-fire upward. The Sparkpede winds down
+   through a mushroom field — shoot a segment and it turns into a mushroom and
+   SPLITS the chain (heads score most). A spider roams your band, a flea drops
+   straight down leaving mushrooms, and a scorpion poisons mushrooms (a poisoned
+   mushroom makes the pede plunge). Clear the pede for a faster, longer wave.
+   Endless, but every run PROVABLY ends: the blaster's move speed AND fire cadence
+   are FINITE, while the pede's step speed grows UNBOUNDED per wave (baseStepMs *
+   waveMult^(wave-1), waveMult<1) and each wave is longer with more loose heads.
+   Past some wave the descent structurally outruns any finite blaster — a better
+   player just reaches a higher wave. Rank = score (scanner applies holder x1.5);
+   tiebreak = time. The engine references NO wallet/RPC/memo/money symbol. Same
+   contract as the other sink games (window.SparkpedeEngine {start,idle,resumeFree});
+   hands the result to the Paid layer via onRunEnd. Every number lives in config.
+   ========================================================================== */
+
+/* ---- CFG: single per-game source of truth -------------------------------- */
+const CFG = {
+  name:'Sparkpede', memoNS:'SPRK', chassis:'sink-leaderboard',
+  subdomain:'spark.finnstergram.com', port:9012,
+  hero:106,
+  spriteBase:'https://arweave.net/_cPSCheRvzVBlZK7QwM-3nXtteMdBbUn-zJhbGRlMmo',
+  accent:'#3a6ff7',   // Electric — the spark / blaster (echoes #106)
+  danger:'#f2a03d',   // Amber — the Sparkpede + hazards
+  shroom:'#a0f0c0',   // Cam-green — mushrooms
+  poison:'#c77dff',   // Violet — poisoned mushrooms
+  entryOIL:25, scorePost:1,
+};
+
+/* ---- Logical canvas (portrait field) ------------------------------------- */
+const VIEW = { w:300, h:400 };
+
+/* ---- GRID: mushrooms + pede live on this grid ---------------------------- */
+const GRID = { cell:20, cols:15, rows:20 };   // 15*20=300 wide, 20*20=400 tall
+
+/* ---- FIELD: deterministic mushroom field (everyone plays the same board) -- */
+const FIELD = { seed:1061, topRow:1, botRow:18, densTop:0.26, densBand:0.12, shroomHP:4 };
+
+/* ---- BLASTER: finite move + finite fire cadence (HALF the skill ceiling) -- */
+const DIFFICULTY = {
+  lives:3,
+  bandTopRow:15,             // blaster confined to this row and below (bottom 5 rows)
+  blasterW:18, blasterH:18,
+  moveMax:300,               // px/s — FINITE
+  fireMs:150,                // ms between shots — FINITE cadence
+  maxShots:3,                // FINITE shots in flight
+  shotSpeed:560, shotR:3,
+  readyMs:1100,              // wave-start / respawn pause
+};
+
+/* ---- PEDE: the skill ceiling (step speed grows UNBOUNDED per wave) -------- */
+const PEDE = {
+  baseStepMs:150, waveMult:0.9, minStepMs:22,     // ms per grid step; shrinks each wave
+  baseLen:10, lenPerWave:1, maxLen:16,            // longer each wave
+  extraHeadsPerWave:1, maxExtraHeads:8,           // loose single heads at higher waves
+  segR:8,
+};
+
+/* ---- SPIDER: roams the band, eats mushrooms, contact costs a life --------- */
+const SPIDER = { firstMs:6000, everyMs:9000, speedX:95, speedY:80, r:10, eatChance:0.02 };
+
+/* ---- FLEA: drops straight down when the band is sparse, leaves mushrooms -- */
+const FLEA = { bandThreshold:5, checkMs:2200, vy:130, speedUp:1.7, r:8, dropChance:0.45 };
+
+/* ---- SCORPION: crosses mid-field, poisons mushrooms (pede then plunges) --- */
+const SCORPION = { fromWave:3, everyMs:12000, speedX:85, r:9, rowMin:6, rowMax:13 };
+
+/* ---- SCORE (higher = better; scanner applies holder x1.5 to `score`) ------ */
+const SCORE = { body:10, head:100, shroom:1, spiderNear:900, spiderMid:600, spiderFar:300,
+                flea:200, scorpion:1000, waveBonus:50 };
+
+/* ---- deterministic RNG (everyone plays the same board) -------------------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* ---- grid helpers -------------------------------------------------------- */
+function idx(gx,gy){ return gy*GRID.cols+gx; }
+function inGrid(gx,gy){ return gx>=0 && gx<GRID.cols && gy>=0 && gy<GRID.rows; }
+function cellCx(gx){ return gx*GRID.cell + GRID.cell/2; }
+function cellCy(gy){ return gy*GRID.cell + GRID.cell/2; }
+function bandTopPx(){ return DIFFICULTY.bandTopRow*GRID.cell; }
+function shroomLive(s,gx,gy){ if(!inGrid(gx,gy)) return false; return s.shrooms[idx(gx,gy)].hp>0; }
+
+/* rect overlap (px) -------------------------------------------------------- */
+function overlap(ax,ay,aw,ah,bx,by,bw,bh){ return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by; }
+
+/* ---- build the mushroom field -------------------------------------------- */
+function makeField(rnd){
+  const arr=new Array(GRID.cols*GRID.rows);
+  for(let i=0;i<arr.length;i++) arr[i]={ hp:0, poison:false };
+  for(let r=FIELD.topRow;r<=FIELD.botRow;r++){
+    const dens=(r<DIFFICULTY.bandTopRow)?FIELD.densTop:FIELD.densBand;
+    for(let c=0;c<GRID.cols;c++){ if(rnd()<dens) arr[idx(c,r)].hp=FIELD.shroomHP; }
+  }
+  return arr;
+}
+
+/* ---- pede step interval for a wave (UNBOUNDED growth => run ends) --------- */
+function pedeStepMs(wave){ return Math.max(PEDE.minStepMs, PEDE.baseStepMs*Math.pow(PEDE.waveMult, wave-1)); }
+function pedeLen(wave){ return Math.min(PEDE.maxLen, PEDE.baseLen + (wave-1)*PEDE.lenPerWave); }
+
+/* ---- spawn the wave's pede(s) -------------------------------------------- */
+function spawnWave(s){
+  s.pedes=[];
+  const len=pedeLen(s.wave);
+  const main={ segs:[], dir:1, vdir:1, plunge:false };
+  for(let i=0;i<len;i++) main.segs.push({ gx:-i, gy:0 });  // head at 0, body streams in from the left
+  s.pedes.push(main);
+  const extra=Math.min(PEDE.maxExtraHeads, (s.wave-1)*PEDE.extraHeadsPerWave);
+  for(let k=0;k<extra;k++){
+    const gx=Math.floor(s.rnd()*GRID.cols);
+    s.pedes.push({ segs:[{ gx, gy:0 }], dir:(s.rnd()<0.5?-1:1), vdir:1, plunge:false });
+  }
+  s.pedeTimer=pedeStepMs(s.wave);
+}
+
+function newRun(){
+  const rnd=mulberry32(FIELD.seed>>>0);
+  const s={
+    phase:'ready',                 // 'ready' | 'play' | 'dead'
+    rnd,
+    wave:1, wavesCleared:0,
+    score:0, lives:DIFFICULTY.lives, timeMs:0,
+    readyTimer:DIFFICULTY.readyMs,
+    shrooms:makeField(rnd),
+    pedes:[], pedeTimer:0,
+    blaster:{ x:VIEW.w/2, y:VIEW.h-GRID.cell*0.9 },
+    tx:VIEW.w/2, ty:VIEW.h-GRID.cell*0.9,
+    shots:[], fireTimer:0,
+    spider:null, spiderTimer:SPIDER.firstMs,
+    flea:null, fleaTimer:FLEA.checkMs,
+    scorpion:null, scorpionTimer:SCORPION.everyMs,
+  };
+  spawnWave(s);
+  return s;
+}
+
+/* ---- blaster movement (finite speed toward target) ----------------------- */
+function moveBlaster(s, dt){
+  const bw=DIFFICULTY.blasterW, bh=DIFFICULTY.blasterH;
+  const minX=bw/2, maxX=VIEW.w-bw/2;
+  const minY=bandTopPx()+bh/2, maxY=VIEW.h-bh/2;
+  s.tx=Math.max(minX,Math.min(maxX,s.tx));
+  s.ty=Math.max(minY,Math.min(maxY,s.ty));
+  const maxStep=DIFFICULTY.moveMax*dt;
+  const dx=s.tx-s.blaster.x, dy=s.ty-s.blaster.y;
+  const d=Math.hypot(dx,dy);
+  if(d<=maxStep){ s.blaster.x=s.tx; s.blaster.y=s.ty; }
+  else { s.blaster.x+=dx/d*maxStep; s.blaster.y+=dy/d*maxStep; }
+}
+
+/* ---- convert a shot into a mushroom + split the chain --------------------- */
+function hitSegment(s, pi, si){
+  const p=s.pedes[pi], seg=p.segs[si];
+  // the hit segment becomes a fresh mushroom
+  if(inGrid(seg.gx,seg.gy)) s.shrooms[idx(seg.gx,seg.gy)]={ hp:FIELD.shroomHP, poison:false };
+  const head=(si===0);
+  s.score += head?SCORE.head:SCORE.body;
+  const front=p.segs.slice(0,si);
+  const back=p.segs.slice(si+1);
+  const rebuilt=[];
+  if(front.length) rebuilt.push({ segs:front, dir:p.dir, vdir:p.vdir, plunge:p.plunge });
+  if(back.length)  rebuilt.push({ segs:back,  dir:p.dir, vdir:p.vdir, plunge:false });
+  s.pedes.splice(pi,1,...rebuilt);
+}
+
+/* ---- advance one pede by one grid step (snake-follow) --------------------- */
+function stepOnePede(s, p){
+  const head=p.segs[0];
+  const old=p.segs.map(g=>({ gx:g.gx, gy:g.gy }));
+  if(p.plunge){
+    const ny=head.gy+1;
+    if(ny>GRID.rows-1){ p.plunge=false; }         // reached the floor — resume winding
+    else { head.gy=ny; for(let i=p.segs.length-1;i>=1;i--) p.segs[i]=old[i-1]; return; }
+  }
+  const nx=head.gx+p.dir;
+  const blockedWall=(nx<0||nx>GRID.cols-1);
+  const blockedShroom=shroomLive(s,nx,head.gy);
+  if(blockedWall||blockedShroom){
+    if(blockedShroom && s.shrooms[idx(nx,head.gy)].poison) p.plunge=true;   // poison => plunge
+    let ny=head.gy+p.vdir;
+    if(ny>GRID.rows-1){ p.vdir=-1; ny=head.gy-1; }
+    else if(ny<0){ p.vdir=1; ny=head.gy+1; }
+    head.gy=ny; p.dir=-p.dir;                       // drop/rise one row and reverse
+  } else {
+    head.gx=nx;
+  }
+  for(let i=p.segs.length-1;i>=1;i--) p.segs[i]=old[i-1];
+}
+
+/* ---- pede touches the blaster? ------------------------------------------- */
+function pedeHitsBlaster(s){
+  const bw=DIFFICULTY.blasterW, bh=DIFFICULTY.blasterH;
+  const bx=s.blaster.x-bw/2, by=s.blaster.y-bh/2;
+  for(const p of s.pedes) for(const g of p.segs){
+    if(overlap(bx,by,bw,bh, g.gx*GRID.cell, g.gy*GRID.cell, GRID.cell, GRID.cell)) return true;
+  }
+  return false;
+}
+
+/* ---- count live mushrooms inside the blaster band ------------------------ */
+function bandShrooms(s){
+  let n=0;
+  for(let r=DIFFICULTY.bandTopRow;r<GRID.rows;r++) for(let c=0;c<GRID.cols;c++) if(shroomLive(s,c,r)) n++;
+  return n;
+}
+
+/* ---- a fired spark hits the lowest target it overlaps (closest first) ----- */
+function resolveShot(s, sh, ev){
+  const x=sh.x, y=sh.y, R=DIFFICULTY.shotR;
+  let best=null;   // {cy, apply()}
+  const consider=(cy, apply)=>{ if(!best || cy>best.cy) best={ cy, apply }; };
+  // pede segments
+  for(let pi=0;pi<s.pedes.length;pi++){ const p=s.pedes[pi];
+    for(let si=0;si<p.segs.length;si++){ const g=p.segs[si];
+      const cx=cellCx(g.gx), cy=cellCy(g.gy);
+      if(Math.abs(x-cx)<=GRID.cell/2 && Math.abs(y-cy)<=GRID.cell/2){
+        consider(cy, ()=>{ hitSegment(s,pi,si); ev.hitPede=true; }); break; }
+    }
+  }
+  // spider
+  if(s.spider){ const sp=s.spider;
+    if(overlap(x-R,y-R,R*2,R*2, sp.x-sp.r,sp.y-sp.r,sp.r*2,sp.r*2)){
+      consider(sp.y, ()=>{ const dist=Math.abs(sp.y-s.blaster.y);
+        s.score += dist<40?SCORE.spiderNear:(dist<90?SCORE.spiderMid:SCORE.spiderFar);
+        s.spider=null; ev.spider=true; }); } }
+  // flea
+  if(s.flea){ const fl=s.flea;
+    if(overlap(x-R,y-R,R*2,R*2, fl.x-fl.r,fl.y-fl.r,fl.r*2,fl.r*2)){
+      consider(fl.y, ()=>{ fl.hits++; if(fl.hits>=2){ s.score+=SCORE.flea; s.flea=null; ev.flea=true; }
+        else { fl.vy*=FLEA.speedUp; } }); } }
+  // scorpion
+  if(s.scorpion){ const sc=s.scorpion;
+    if(overlap(x-R,y-R,R*2,R*2, sc.x-sc.r,sc.y-sc.r,sc.r*2,sc.r*2)){
+      consider(sc.y, ()=>{ s.score+=SCORE.scorpion; s.scorpion=null; ev.scorpion=true; }); } }
+  // mushroom
+  const gx=Math.floor(x/GRID.cell), gy=Math.floor(y/GRID.cell);
+  if(shroomLive(s,gx,gy)){
+    consider(cellCy(gy), ()=>{ const m=s.shrooms[idx(gx,gy)]; m.hp--; if(m.hp<=0){ m.poison=false; s.score+=SCORE.shroom; } ev.hitShroom=true; });
+  }
+  if(best){ best.apply(); return true; }   // shot consumed
+  return false;
+}
+
+/* ---- enemies ------------------------------------------------------------- */
+function spawnSpider(s){
+  const fromLeft=s.rnd()<0.5;
+  s.spider={ x:fromLeft?-12:VIEW.w+12, y:bandTopPx()+GRID.cell,
+             vx:(fromLeft?1:-1)*SPIDER.speedX, vy:(s.rnd()<0.5?1:-1)*SPIDER.speedY, r:SPIDER.r };
+}
+function updateSpider(s, dt, ev){
+  const sp=s.spider; if(!sp) return;
+  sp.x+=sp.vx*dt; sp.y+=sp.vy*dt;
+  const top=bandTopPx()+sp.r, bot=VIEW.h-sp.r;
+  if(sp.y<top){ sp.y=top; sp.vy=Math.abs(sp.vy); } else if(sp.y>bot){ sp.y=bot; sp.vy=-Math.abs(sp.vy); }
+  if(s.rnd()<SPIDER.eatChance){ const gx=Math.floor(sp.x/GRID.cell), gy=Math.floor(sp.y/GRID.cell);
+    if(shroomLive(s,gx,gy)) s.shrooms[idx(gx,gy)]={ hp:0, poison:false }; }
+  if(sp.x<-20||sp.x>VIEW.w+20){ s.spider=null; return; }
+  const bw=DIFFICULTY.blasterW, bh=DIFFICULTY.blasterH;
+  if(overlap(s.blaster.x-bw/2,s.blaster.y-bh/2,bw,bh, sp.x-sp.r,sp.y-sp.r,sp.r*2,sp.r*2)){ ev.life=true; }
+}
+function spawnFlea(s){
+  const gx=Math.floor(s.rnd()*GRID.cols);
+  s.flea={ x:cellCx(gx), y:-8, vy:FLEA.vy, hits:0, r:FLEA.r };
+}
+function updateFlea(s, dt, ev){
+  const fl=s.flea; if(!fl) return;
+  const prevGy=Math.floor(fl.y/GRID.cell);
+  fl.y+=fl.vy*dt;
+  const gy=Math.floor(fl.y/GRID.cell), gx=Math.floor(fl.x/GRID.cell);
+  if(gy!==prevGy && inGrid(gx,gy) && gy>=FIELD.topRow && s.rnd()<FLEA.dropChance){
+    if(!shroomLive(s,gx,gy)) s.shrooms[idx(gx,gy)]={ hp:FIELD.shroomHP, poison:false };
+  }
+  if(fl.y>VIEW.h+8){ s.flea=null; return; }
+  const bw=DIFFICULTY.blasterW, bh=DIFFICULTY.blasterH;
+  if(overlap(s.blaster.x-bw/2,s.blaster.y-bh/2,bw,bh, fl.x-fl.r,fl.y-fl.r,fl.r*2,fl.r*2)){ ev.life=true; }
+}
+function spawnScorpion(s){
+  const fromLeft=s.rnd()<0.5;
+  const row=SCORPION.rowMin+Math.floor(s.rnd()*(SCORPION.rowMax-SCORPION.rowMin+1));
+  s.scorpion={ x:fromLeft?-12:VIEW.w+12, y:cellCy(row), vx:(fromLeft?1:-1)*SCORPION.speedX, r:SCORPION.r, row };
+}
+function updateScorpion(s, dt){
+  const sc=s.scorpion; if(!sc) return;
+  const prevGx=Math.floor(sc.x/GRID.cell);
+  sc.x+=sc.vx*dt;
+  const gx=Math.floor(sc.x/GRID.cell);
+  if(gx!==prevGx && shroomLive(s,gx,sc.row)) s.shrooms[idx(gx,sc.row)].poison=true;
+  if(sc.x<-20||sc.x>VIEW.w+20) s.scorpion=null;
+}
+
+/* ---- lose a life: clear shots + poison + enemies, respawn the wave -------- */
+function loseLife(s){
+  s.lives--;
+  if(s.lives<=0){ s.phase='dead'; return; }
+  s.shots=[]; s.spider=null; s.flea=null; s.scorpion=null;
+  for(const m of s.shrooms) m.poison=false;                    // poison reverts (classic)
+  s.blaster.x=VIEW.w/2; s.blaster.y=VIEW.h-GRID.cell*0.9; s.tx=s.blaster.x; s.ty=s.blaster.y;
+  spawnWave(s);                                                // fresh pede at the current wave
+  s.phase='ready'; s.readyTimer=DIFFICULTY.readyMs;
+}
+
+function nextWave(s){
+  s.wavesCleared++; s.wave++;
+  s.score+=SCORE.waveBonus*s.wave;
+  s.shots=[];
+  spawnWave(s);
+  s.phase='ready'; s.readyTimer=DIFFICULTY.readyMs;
+}
+
+/* ---- one fixed step. Returns events for sound/flash. --------------------- */
+function stepGame(s, dtMs){
+  const ev={ shoot:false, hitPede:false, hitShroom:false, spider:false, flea:false,
+             scorpion:false, life:false, waveClear:false, over:false };
+  if(s.phase==='dead') return ev;
+  const dt=dtMs/1000; s.timeMs+=dtMs;
+
+  moveBlaster(s, dt);
+
+  if(s.phase==='ready'){
+    s.readyTimer-=dtMs;
+    if(s.readyTimer<=0) s.phase='play';
+    return ev;
+  }
+
+  // auto-fire (finite cadence, finite in-flight)
+  s.fireTimer-=dtMs;
+  if(s.fireTimer<=0 && s.shots.length<DIFFICULTY.maxShots){
+    s.shots.push({ x:s.blaster.x, y:s.blaster.y-DIFFICULTY.blasterH/2 });
+    s.fireTimer=DIFFICULTY.fireMs; ev.shoot=true;
+  }
+  // move + resolve shots
+  for(let i=s.shots.length-1;i>=0;i--){ const sh=s.shots[i];
+    sh.y-=DIFFICULTY.shotSpeed*dt;
+    if(sh.y<-4){ s.shots.splice(i,1); continue; }
+    if(resolveShot(s, sh, ev)) s.shots.splice(i,1);
+  }
+
+  // pede clock (may take several grid steps at high waves)
+  s.pedeTimer-=dtMs;
+  let guard=0;
+  while(s.pedeTimer<=0 && s.phase==='play' && guard++<64){
+    for(const p of s.pedes) stepOnePede(s, p);
+    if(pedeHitsBlaster(s)){ ev.life=true; break; }
+    s.pedeTimer+=pedeStepMs(s.wave);
+  }
+
+  // enemies
+  updateSpider(s, dt, ev);
+  updateFlea(s, dt, ev);
+  updateScorpion(s, dt);
+
+  // enemy contact costs a life
+  if(ev.life){ loseLife(s); if(s.phase==='dead'){ ev.over=true; } return ev; }
+
+  // spawn scheduling
+  s.spiderTimer-=dtMs;
+  if(s.spiderTimer<=0){ if(!s.spider) spawnSpider(s); s.spiderTimer=SPIDER.everyMs; }
+  s.fleaTimer-=dtMs;
+  if(s.fleaTimer<=0){ if(!s.flea && bandShrooms(s)<FLEA.bandThreshold) spawnFlea(s); s.fleaTimer=FLEA.checkMs; }
+  if(s.wave>=SCORPION.fromWave){ s.scorpionTimer-=dtMs;
+    if(s.scorpionTimer<=0){ if(!s.scorpion) spawnScorpion(s); s.scorpionTimer=SCORPION.everyMs; } }
+
+  // wave clear
+  if(s.pedes.length===0){ nextWave(s); ev.waveClear=true; }
+
+  return ev;
+}
+
+/* ---- Export for headless verification; skip DOM under Node --------------- */
+const HEADLESS = (typeof document === 'undefined');
+if(HEADLESS){
+  module.exports = { CFG, VIEW, GRID, FIELD, DIFFICULTY, PEDE, SPIDER, FLEA, SCORPION, SCORE,
+                     mulberry32, idx, inGrid, makeField, pedeStepMs, pedeLen, spawnWave,
+                     newRun, stepGame, hitSegment, stepOnePede, bandShrooms };
+}
+
+/* ======================= DOM / RENDER / INPUT (browser) =================== */
+if(!HEADLESS){
+(function(){
+  const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+  ctx.imageSmoothingEnabled=false;
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // hero sprite: real Bot 106 rides the blaster; numbered-swatch fallback (FDL rule)
+  const hero=new Image(); let heroOK=false;
+  hero.crossOrigin='anonymous';
+  hero.onload=()=>{heroOK=true;};
+  hero.onerror=()=>{heroOK=false;};
+  if(CFG.spriteBase && CFG.spriteBase.indexOf('REPLACE_')!==0){ hero.src=CFG.spriteBase+'/'+CFG.hero+'.png'; }
+
+  let s=newRun(); let flash=0; let fx=[];
+  // active gates the sim: Free auto-plays (true on load); Paid idles until entry.
+  let active=true;
+
+  // ---- input: drag the blaster in the band + keyboard; sparks auto-fire ---
+  function toView(clientX, clientY){
+    const r=cv.getBoundingClientRect();
+    return { x:(clientX-r.left)/r.width*VIEW.w, y:(clientY-r.top)/r.height*VIEW.h };
+  }
+  let dragging=false;
+  function setTargetFromEvent(e){
+    const t=e.touches?e.touches[0]:e; if(t.clientX==null) return;
+    const p=toView(t.clientX, t.clientY);
+    s.tx=p.x; s.ty=p.y;
+  }
+  function down(e){ dragging=true; if(s.phase!=='dead'){ setTargetFromEvent(e); e.preventDefault(); } }
+  function move(e){
+    if(!dragging && e.type==='pointermove' && e.pointerType==='mouse' && e.buttons===0){
+      // desktop hover-follow while over the surface
+      if(s.phase!=='dead') setTargetFromEvent(e);
+      return;
+    }
+    if(s.phase==='dead') return;
+    setTargetFromEvent(e); e.preventDefault();
+  }
+  function up(){ dragging=false; }
+  cv.addEventListener('pointerdown',down);
+  cv.addEventListener('pointermove',move,{passive:false});
+  window.addEventListener('pointerup',up);
+
+  const keys={left:false,right:false,updn:false,down:false};
+  addEventListener('keydown',e=>{
+    if(e.key==='ArrowLeft')keys.left=true;
+    else if(e.key==='ArrowRight')keys.right=true;
+    else if(e.key==='ArrowUp')keys.updn=true;
+    else if(e.key==='ArrowDown')keys.down=true;
+    else if(e.key==='Escape')closeRules();
+    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(e.key)>=0) e.preventDefault();
+  });
+  addEventListener('keyup',e=>{
+    if(e.key==='ArrowLeft')keys.left=false;
+    else if(e.key==='ArrowRight')keys.right=false;
+    else if(e.key==='ArrowUp')keys.updn=false;
+    else if(e.key==='ArrowDown')keys.down=false;
+  });
+
+  // simple WebAudio blips (respect reduced-motion => silent)
+  let ac=null; function blip(kind){ if(reduce) return; try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination);
+    const f={shoot:660,pede:300,shroom:220,bonus:880,life:170,over:150}[kind]||440;
+    o.frequency.value=f; g.gain.value=0.03; o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+0.10); o.stop(ac.currentTime+0.11);
+  }catch(e){} }
+
+  // ---- overlays ----------------------------------------------------------
+  const rulesO=document.getElementById('rulesOverlay');
+  const overO=document.getElementById('overOverlay');
+  const paidO=document.getElementById('paidOverlay');
+  const infoBtn=document.getElementById('infoBtn');
+  function openRules(){ rulesO.classList.add('show'); document.getElementById('rulesClose').focus(); }
+  function closeRules(){ rulesO.classList.remove('show'); infoBtn.focus(); }
+  infoBtn.onclick=openRules;
+  document.getElementById('rulesClose').onclick=closeRules;
+  rulesO.addEventListener('click',e=>{ if(e.target===rulesO) closeRules(); });
+
+  function pad(n,w){ return String(n).padStart(w,'0'); }
+  function mmss(ms){ const t=Math.floor(ms/1000); return Math.floor(t/60)+':'+pad(t%60,2); }
+
+  function showOver(){
+    document.getElementById('oScore').textContent=String(s.score);
+    document.getElementById('oWaves').textContent=pad(s.wavesCleared,2);
+    document.getElementById('oTime').textContent=mmss(s.timeMs);
+    document.getElementById('overCard').classList.toggle('win', s.wavesCleared>0);
+    document.getElementById('overTitle').textContent = s.wavesCleared>0 ? 'GOOD SHIFT!' : 'RUN OVER';
+    overO.classList.add('show');
+    document.getElementById('retryBtn').focus();
+  }
+  document.getElementById('retryBtn').onclick=()=>{ overO.classList.remove('show'); s=newRun(); fx=[]; active=true; };
+  overO.addEventListener('click',e=>{ if(e.target===overO){ overO.classList.remove('show'); s=newRun(); fx=[]; active=true; } });
+
+  // ---- HUD ---------------------------------------------------------------
+  const elScore=document.getElementById('score'), elWave=document.getElementById('wave'),
+        elLives=document.getElementById('lives');
+  function buildLives(){ elLives.innerHTML=''; for(let i=0;i<DIFFICULTY.lives;i++){ const d=document.createElement('span'); d.className='life'; elLives.appendChild(d);} }
+  buildLives();
+  function syncHUD(){
+    elScore.textContent=pad(s.score,6);
+    elWave.textContent=pad(s.wave,2);
+    const dots=elLives.children;
+    for(let i=0;i<dots.length;i++) dots[i].className='life'+(i<s.lives?'':' off');
+  }
+
+  // ---- render ------------------------------------------------------------
+  function drawShroom(gx,gy,m){
+    const x=gx*GRID.cell, y=gy*GRID.cell, c=GRID.cell;
+    const base=m.poison?CFG.poison:CFG.shroom;
+    ctx.fillStyle='#3a2b1e'; ctx.fillRect(x+c*0.42,y+c*0.5,c*0.16,c*0.42);   // stalk
+    // cap fades as HP drops
+    ctx.globalAlpha=0.4+0.6*(m.hp/FIELD.shroomHP);
+    ctx.fillStyle=base; ctx.fillRect(x+c*0.15,y+c*0.22,c*0.7,c*0.34);
+    ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillRect(x+c*0.15,y+c*0.22,c*0.7,c*0.08);
+    ctx.globalAlpha=1;
+  }
+  function drawDisc(cx,cy,r,fill,ring){
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=fill; ctx.fill();
+    if(ring){ ctx.lineWidth=1.5; ctx.strokeStyle=ring; ctx.stroke(); }
+  }
+  function draw(){
+    ctx.clearRect(0,0,VIEW.w,VIEW.h);
+    ctx.fillStyle='#1a1030'; ctx.fillRect(0,0,VIEW.w,VIEW.h);
+    // band divider
+    ctx.fillStyle='rgba(58,111,247,.10)'; ctx.fillRect(0,bandTopPx(),VIEW.w,VIEW.h-bandTopPx());
+    ctx.fillStyle='rgba(58,111,247,.35)'; ctx.fillRect(0,bandTopPx(),VIEW.w,1);
+
+    // mushrooms
+    for(let r=0;r<GRID.rows;r++) for(let c=0;c<GRID.cols;c++){ const m=s.shrooms[idx(c,r)]; if(m.hp>0) drawShroom(c,r,m); }
+
+    // scorpion
+    if(s.scorpion){ const sc=s.scorpion; drawDisc(sc.x,sc.y,sc.r,'#8a5a2b','#f2d0a0');
+      ctx.fillStyle='#f2a03d'; ctx.fillRect(sc.x-sc.r,sc.y-1,sc.r*2,2); }
+    // flea
+    if(s.flea){ const fl=s.flea; drawDisc(fl.x,fl.y,fl.r,'#d94f4f','#ffd0d0'); }
+    // spider
+    if(s.spider){ const sp=s.spider; drawDisc(sp.x,sp.y,sp.r,'#7a4bd0','#d9c2ff');
+      ctx.strokeStyle='#d9c2ff'; ctx.lineWidth=1;
+      for(let a=0;a<4;a++){ const ang=a*0.7+0.3; ctx.beginPath();
+        ctx.moveTo(sp.x-Math.cos(ang)*sp.r,sp.y); ctx.lineTo(sp.x-Math.cos(ang)*sp.r*1.8,sp.y+Math.sin(ang)*sp.r);
+        ctx.moveTo(sp.x+Math.cos(ang)*sp.r,sp.y); ctx.lineTo(sp.x+Math.cos(ang)*sp.r*1.8,sp.y+Math.sin(ang)*sp.r); ctx.stroke(); } }
+
+    // pede segments
+    for(const p of s.pedes){ for(let i=0;i<p.segs.length;i++){ const g=p.segs[i];
+      if(g.gy<0||g.gy>=GRID.rows) continue;
+      const cx=cellCx(g.gx), cy=cellCy(g.gy), head=(i===0);
+      drawDisc(cx,cy,PEDE.segR, head?'#ffd27a':CFG.danger, '#7a4a10');
+      if(head){ ctx.fillStyle='#3e2a10'; ctx.fillRect(cx-3,cy-2,2,2); ctx.fillRect(cx+1,cy-2,2,2); } // eyes
+    } }
+
+    // sparks
+    ctx.fillStyle=CFG.accent;
+    for(const sh of s.shots){ ctx.fillRect(sh.x-1.5, sh.y-5, 3, 8);
+      ctx.fillStyle='rgba(160,232,240,.9)'; ctx.fillRect(sh.x-1, sh.y-6, 2, 3); ctx.fillStyle=CFG.accent; }
+
+    // blaster = Bot 106 (round token, sprite clipped in; amber fallback)
+    const b=s.blaster, R=DIFFICULTY.blasterW/2;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.closePath();
+    if(heroOK){ ctx.fillStyle='#1a1030'; ctx.fill(); ctx.clip();
+      const d=R*2+4; ctx.drawImage(hero, b.x-d/2, b.y-d/2, d, d);
+    } else { ctx.fillStyle=CFG.accent; ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='9px "Jersey 15", monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('106', b.x, b.y); }
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.lineWidth=1.5; ctx.strokeStyle='rgba(160,232,240,.95)'; ctx.stroke();
+    ctx.fillStyle=CFG.accent; ctx.fillRect(b.x-1.5,b.y-R-3,3,4);   // muzzle
+
+    // hit sparks fx
+    if(!reduce) for(const p of fx){ ctx.globalAlpha=Math.max(0,p.t*2.2); ctx.fillStyle=p.col; ctx.fillRect(p.x-1.5,p.y-1.5,3,3); }
+    ctx.globalAlpha=1;
+
+    // get-ready hint
+    if(s.phase==='ready'){
+      ctx.fillStyle='rgba(253,243,231,.9)'; ctx.font='16px "Jersey 15", monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(s.wave>1?('WAVE '+s.wave):'GET READY', VIEW.w/2, VIEW.h*0.45);
+    }
+    if(flash>0 && !reduce){ ctx.fillStyle='rgba(242,160,61,'+(flash*0.5)+')'; ctx.fillRect(0,0,VIEW.w,VIEW.h); }
+  }
+  function spark(x,y,col){ if(reduce) return; for(let k=0;k<6;k++) fx.push({ x, y, vx:(Math.random()-0.5)*120, vy:(Math.random()-0.5)*120, t:0.4, col }); }
+
+  // ---- engine contract (Paid layer arms/observes a run via these) --------
+  function startRun(){ s=newRun(); active=true; flash=0; fx=[];
+    rulesO.classList.remove('show'); overO.classList.remove('show'); paidO.classList.remove('show'); }
+  function idleForPaid(){ s=newRun(); fx=[]; active=false; }
+  function resumeFree(){ s=newRun(); fx=[]; active=true; }
+  window.SparkpedeEngine = { start:startRun, idle:idleForPaid, resumeFree:resumeFree };
+
+  // Called on the death transition. Hands the result to the Paid controller;
+  // if it claims the run (paid), the engine skips its own Free retry overlay.
+  function endRun(){
+    active=false; syncHUD();
+    if(window.SparkpedePaid && SparkpedePaid.onRunEnd &&
+       SparkpedePaid.onRunEnd({ score:s.score, waves:s.wavesCleared, timeMs:s.timeMs })) return;
+    showOver();
+  }
+
+  // ---- loop --------------------------------------------------------------
+  let last=performance.now(), acc=0; const FIXED=1000/120;
+  function frame(now){
+    let dt=now-last; last=now; if(dt>100)dt=100; acc+=dt;
+    if(active){
+      // keyboard nudges the target within the band at blaster max speed
+      const step=DIFFICULTY.moveMax*(dt/1000);
+      if(keys.left)  s.tx-=step; if(keys.right) s.tx+=step;
+      if(keys.updn)  s.ty-=step; if(keys.down)  s.ty+=step;
+      while(acc>=FIXED){
+        const before=s.lives, deadBefore=(s.phase==='dead');
+        const ev=stepGame(s, FIXED);
+        if(ev.shoot) blip('shoot');
+        if(ev.hitPede){ blip('pede'); }
+        if(ev.hitShroom){ blip('shroom'); }
+        if(ev.spider||ev.flea||ev.scorpion) blip('bonus');
+        if(ev.waveClear) blip('bonus');
+        if(ev.life||s.lives<before){ flash=1; blip('life'); }
+        acc-=FIXED;
+        if(s.phase==='dead' && !deadBefore){ blip('over'); endRun(); break; }
+      }
+    } else { acc=0; }
+    // advance fx
+    for(const p of fx){ p.t-=dt/1000; p.x+=p.vx*dt/1000; p.y+=p.vy*dt/1000; }
+    for(let i=fx.length-1;i>=0;i--) if(fx[i].t<=0) fx.splice(i,1);
+    if(flash>0) flash=Math.max(0,flash-dt/220);
+    syncHUD(); draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+}
+</script>
+
+<!-- Shared wallet libs (loaded once; the wallet LOGIC stays dead until Paid is chosen — mirrors live Mr Bot / Rush). -->
+<script src="phantom-deeplink-libs.min.js?v=20260906a"></script>
+<script src="phantom-mobile.js?v=20260906a"></script>
+<script src="solana-web3.iife.min.js?v=20260906a"></script>
+<script>
+/* ============================================================================
+ * Sparkpede — Paid layer. SPRK sink + fun leaderboard.
+ * The wallet MECHANICS below (getProvider, fetchOilBalance, buildTransferIx,
+ * buildMemoIx, confirmSignature, sendPayment, onConnect, resume) are LIFTED
+ * VERBATIM from the live Mr Bot index.html (itself lifted from Bot Merge Rush)
+ * — only CFG values, the SPRK memo tag / pending key / sign marker, and the
+ * score-memo shape change. The UI glue is Sparkpede's (single-run action game).
+ * Sparkpede is real-time and UNREPLAYABLE. The leaderboard is a FUN RANKING +
+ * an OIL SINK. It is NOT verified / provably fair. Records, does not verify.
+ * ==========================================================================*/
+(function(){
+  'use strict';
+  var mode = 'free';
+  function $(id){ return document.getElementById(id); }
+
+  function lockModeToggle(lock){
+    $('modeFree').disabled = !!lock;
+    $('modePaid').disabled = !!lock;
+  }
+
+  var Paid = (function(){
+    var TEST_MODE = true;     // <-- ships TEST for Localnet proof; flip to false ONLY with Founder confirm in this run's output
+    var CFG = TEST_MODE ? {
+      RPC: 'http://127.0.0.1:8899',
+      TOKEN_PROGRAM: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      MEMO_PROGRAM: 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr',
+      OIL_MINT: '9B5ZQifZQc3ykhnZhA9m8DFoNY5uaTwqHGNZMah6eK8Y',
+      TREASURY: '8tzZzNiGkE2kYXhUSauNEUyVHiaWBt5pBagg7CHKPNBM',
+      TREASURY_TOKEN_ACCOUNT: '3s1SQ7JZmti4PfhVsb7LCTn9q5ZhRBMaH6v2vsrVZeg6',
+      ENTRY_FEE: 25, POST_FEE: 1, DECIMALS: 2
+    } : {
+      RPC: 'https://finnbots-rpc.mart-kin1000.workers.dev',
+      TOKEN_PROGRAM: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      MEMO_PROGRAM: 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr',
+      OIL_MINT: 'HrcfXJcFdMoLfbkN5qCTSFrLsAgJNHitmwKc5AyS7xzf',
+      TREASURY: '75WPN3kwYUT5kdPU7V3Fp3LhnxmPC38bsgBCasRQdXMR',
+      TREASURY_TOKEN_ACCOUNT: '2ZBNMLZFfHCuZm9Lfc3b7ut296tRwGtapuXad7zSm1ED',
+      ENTRY_FEE: 25, POST_FEE: 1, DECIMALS: 2
+    };
+    var MEMO_TAG = 'SPRK';
+    var wallet = { pubkey:null, oil:0 };
+    var inited=false, busy=false, entrySig=null, pendingResult=null;
+    var connectBtn, walletStatus;
+
+    function $(id){ return document.getElementById(id); }
+    // ---- verbatim from Rush/Mr Bot ----
+    function getProvider(){ if(window.phantom&&window.phantom.solana&&window.phantom.solana.isPhantom) return window.phantom.solana; if(window.solana&&window.solana.isPhantom) return window.solana; return null; }
+    function shortAddr(a){ return a.slice(0,4)+'\u2026'+a.slice(-4); }
+    function setStatus(html,cls){ walletStatus.classList.remove('hidden'); walletStatus.className='wallet-status'+(cls?' '+cls:''); walletStatus.innerHTML=html; }
+    function canPlay(){ return !!wallet.pubkey && wallet.oil>=CFG.ENTRY_FEE; }
+    function delay(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
+
+    // ---- balance (verbatim from Rush/Mr Bot) -------------------------------
+    async function fetchOilBalance(owner){
+      try{ var body=JSON.stringify({ jsonrpc:'2.0', id:'oilbal', method:'getTokenAccountsByOwner', params:[ owner, { mint:CFG.OIL_MINT }, { encoding:'jsonParsed' } ] });
+        var r=await fetch(CFG.RPC,{ method:'POST', headers:{'Content-Type':'application/json'}, body:body }); if(!r.ok) return 0;
+        var j=await r.json(); var accts=j&&j.result&&j.result.value; if(!accts||!accts.length) return 0;
+        var base=0; accts.forEach(function(acc){ try{ base+=Number(acc.account.data.parsed.info.tokenAmount.amount); }catch(e){} });
+        return base/Math.pow(10,CFG.DECIMALS);
+      }catch(e){ return 0; }
+    }
+    async function checkBalance(owner){
+      wallet.oil=await fetchOilBalance(owner);
+      var pfx=TEST_MODE?'\ud83e\uddea TEST MODE \u2014 ':'';
+      if(wallet.oil>=CFG.ENTRY_FEE){ setStatus('Connected as <span class="addr">'+shortAddr(owner)+'</span><br/>'+pfx+'You hold <b>'+wallet.oil.toFixed(2)+'</b> $OIL \u2014 tap Play to enter (25 OIL).', 'ok'); }
+      else { setStatus('Connected as <span class="addr">'+shortAddr(owner)+'</span><br/>'+pfx+'This wallet holds <b>'+wallet.oil.toFixed(2)+'</b> $OIL \u2014 need at least '+CFG.ENTRY_FEE+' to play.', 'warn'); }
+      relabelStart();
+    }
+
+    // ---- payment (one signed SPL transfer + memo — verbatim from Rush/Mr Bot) ----
+    var PENDING_KEY='sprk_pending_action';
+    function savePending(a){ try{ localStorage.setItem(PENDING_KEY, JSON.stringify(a)); }catch(e){} }
+    function loadPending(){ try{ var v=localStorage.getItem(PENDING_KEY); return v?JSON.parse(v):null; }catch(e){ return null; } }
+    function clearPending(){ try{ localStorage.removeItem(PENDING_KEY); }catch(e){} }
+    function PayError(msg){ this.userMessage=msg; }
+    function u64LE(amount){ var out=new Uint8Array(8); var big=BigInt(Math.round(amount)); for(var i=0;i<8;i++){ out[i]=Number(big&0xffn); big>>=8n; } return out; }
+    function buildTransferIx(src,dst,owner,amt){ var data=new Uint8Array(9); data[0]=3; data.set(u64LE(amt),1);
+      return new solanaWeb3.TransactionInstruction({ programId:new solanaWeb3.PublicKey(CFG.TOKEN_PROGRAM),
+        keys:[{pubkey:src,isSigner:false,isWritable:true},{pubkey:dst,isSigner:false,isWritable:true},{pubkey:owner,isSigner:true,isWritable:false}], data:data }); }
+    function buildMemoIx(owner,text){ return new solanaWeb3.TransactionInstruction({ programId:new solanaWeb3.PublicKey(CFG.MEMO_PROGRAM), keys:[{pubkey:owner,isSigner:true,isWritable:false}], data:new TextEncoder().encode(text) }); }
+    async function confirmSignature(connection,signature,timeoutMs){ var start=Date.now();
+      while(Date.now()-start<timeoutMs){ var res=await connection.getSignatureStatuses([signature]); var st=res&&res.value&&res.value[0];
+        if(st){ if(st.err) throw new PayError('The transaction failed on-chain \u2014 no charge was made. Please try again.'); if(st.confirmationStatus==='confirmed'||st.confirmationStatus==='finalized') return true; } await delay(1500); } return false; }
+
+    async function sendPayment(amountOil, memoText, action){
+      var provider=getProvider();
+      var useMobile=!provider && window.PhantomMobile && PhantomMobile.isMobile() && PhantomMobile.hasSession();
+      if(!provider && !useMobile) throw new PayError('Phantom isn\u2019t reachable here \u2014 open this page in your browser, or tap Connect again on mobile.');
+      var ownerPk=new solanaWeb3.PublicKey(wallet.pubkey);
+      var connection=new solanaWeb3.Connection(CFG.RPC,'confirmed');
+      var tokAccts=await connection.getTokenAccountsByOwner(ownerPk,{ mint:new solanaWeb3.PublicKey(CFG.OIL_MINT) });
+      if(!tokAccts.value.length) throw new PayError('No $OIL account found in this wallet.');
+      var sourcePubkey=tokAccts.value[0].pubkey;
+      var balInfo=await connection.getTokenAccountBalance(sourcePubkey);
+      var needBase=Math.round(amountOil*Math.pow(10,CFG.DECIMALS));
+      if(Number(balInfo.value.amount)<needBase) throw new PayError('Not enough liquid $OIL \u2014 need '+amountOil+'.');
+      var destPubkey=new solanaWeb3.PublicKey(CFG.TREASURY_TOKEN_ACCOUNT);
+      var tx=new solanaWeb3.Transaction();
+      tx.add(buildTransferIx(sourcePubkey,destPubkey,ownerPk,needBase), buildMemoIx(ownerPk,memoText));
+      tx.feePayer=ownerPk; var latest=await connection.getLatestBlockhash(); tx.recentBlockhash=latest.blockhash;
+      if(useMobile){
+        var pend={ action:action, owner:wallet.pubkey, marker:'sprk_sign' };
+        if(action==='score' && pendingResult){ pend.entrySig=entrySig; pend.score=pendingResult.score; pend.waves=pendingResult.waves; pend.timeMs=pendingResult.timeMs; }
+        savePending(pend); setStatus('Opening Phantom to approve\u2026');
+        var unsigned=tx.serialize({ requireAllSignatures:false, verifySignatures:false });
+        PhantomMobile.signTransaction(unsigned, window.location.origin+window.location.pathname, 'sprk_sign'); return null;
+      }
+      var signed=await provider.signTransaction(tx); setStatus('Sending payment\u2026');
+      var rawSig=await connection.sendRawTransaction(signed.serialize(),{ skipPreflight:false }); setStatus('Payment sent \u2014 waiting for confirmation\u2026');
+      var ok=await confirmSignature(connection,rawSig,30000); if(!ok) throw new PayError('Confirmation is taking longer than expected. Signature: '+rawSig+'. Do not pay again \u2014 check it first.');
+      return rawSig; // base58 on-chain signature
+    }
+
+    // ---- score memo (JUMP — no seed, no move-log, no replay; records NOT verified) ----
+    function buildScoreMemo(res){ return MEMO_TAG+'|score|sig='+String(entrySig).slice(0,32)+'|score='+res.score+'|waves='+res.waves+'|time='+res.timeMs; }
+
+    // ---- flow glue (Bot Smash: single-run action game) ---------------------
+    function relabelStart(){
+      var b=$('paidPlayBtn'); if(!b) return;
+      b.textContent = canPlay() ? 'Play (25 OIL)' : (wallet.pubkey ? 'Need 25 OIL to play' : 'Connect wallet first');
+    }
+    function relabelStartBusy(t){ var b=$('paidPlayBtn'); if(b) b.textContent=t; }
+
+    function onEntryConfirmed(sig){ entrySig=sig; busy=false; lockModeToggle(true);
+      setStatus('Entry paid \u2014 good luck! Post your score after the run.', 'ok');
+      window.SparkpedeEngine.start(); }
+
+    // Called by the engine at game over. Returns true if this was a paid run (engine then skips its free overlay).
+    function onRunEnd(res){
+      if(mode!=='paid' || !entrySig) return false;
+      pendingResult={ score:res.score, waves:res.waves, timeMs:res.timeMs };
+      showRunOver(pendingResult); return true;
+    }
+    function fmtTime(ms){ var s=Math.round(ms/1000); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+    function showRunOver(res){
+      setStatus('Run over \u2014 post your score below to record it (1 OIL).', 'ok'); relabelStart();
+      var ov=$('paidOverlay'); ov.classList.add('show');
+      ov.innerHTML='<div class="card win"><h2>RUN OVER</h2><p>Score <b>'+res.score+'</b> \u00b7 Waves <b>'+res.waves+'</b> \u00b7 Time <b>'+fmtTime(res.timeMs)+'</b><br/>Post it to the leaderboard (1 OIL) \u2014 a fun ranking, not verified.</p>'+
+        '<button class="btn" id="postBtn">Post score (1 OIL)</button></div>';
+      $('postBtn').addEventListener('click', onPost, { once:false });
+    }
+    async function onPost(){
+      if(busy || !pendingResult) return;
+      busy=true; var pb=$('postBtn'); if(pb){ pb.disabled=true; pb.textContent='Posting\u2026'; }
+      var memo=buildScoreMemo(pendingResult);
+      try{ var sig=await sendPayment(CFG.POST_FEE, memo, 'score'); if(sig===null) return; showPosted(pendingResult); }
+      catch(e){ setStatus('Connected as <span class="addr">'+shortAddr(wallet.pubkey||'')+'</span><br/>'+((e instanceof PayError)?e.userMessage:'Your score post didn\u2019t confirm. Nothing recorded yet \u2014 tap to retry.'), 'warn');
+        if(pb){ pb.disabled=false; pb.textContent='Retry post'; } busy=false; }
+    }
+    function showPosted(res){ pendingResult=null; entrySig=null; busy=false; lockModeToggle(false);
+      $('posted-text').innerHTML='Score <b>'+res.score+'</b> \u00b7 Waves <b>'+res.waves+'</b> \u00b7 Time <b>'+fmtTime(res.timeMs)+'</b>. It\u2019ll appear on the leaderboard once recorded on-chain \u2014 a fun ranking, not verified.';
+      $('paidOverlay').classList.remove('show');
+      $('postedSheet').classList.add('show');
+    }
+
+    // Paid start card (idle state before entry) — mirrors Mr Bot's resetToPlay.
+    function showPaidStart(){
+      entrySig=null; pendingResult=null; busy=false; lockModeToggle(false);
+      var ov=$('paidOverlay'); ov.classList.add('show');
+      ov.innerHTML='<div class="card"><h2>SPARKPEDE \u2014 PAID</h2><p>25 OIL entry \u00b7 one run (3 lives, no continues) \u00b7 fun leaderboard, not verified. Zap the Sparkpede, clear waves \u2014 holders \u00d71.5.</p>'+
+        '<button class="btn" id="paidPlayBtn">Play (25 OIL)</button></div>';
+      $('paidPlayBtn').addEventListener('click', function(){ handleStart(); });
+      relabelStart();
+      if(wallet.pubkey) checkBalance(wallet.pubkey);
+    }
+
+    // ---- connect (desktop + mobile — verbatim from Rush/Mr Bot) ------------
+    async function onConnect(){
+      var provider=getProvider();
+      if(!provider){
+        if(window.PhantomMobile && PhantomMobile.isMobile()){
+          var inBrowse=new URLSearchParams(window.location.search).get('src')==='browse';
+          if(!inBrowse){ connectBtn.disabled=true; connectBtn.textContent='Opening in Phantom\u2026'; setStatus('Opening this game inside Phantom\u2019s browser.');
+            var target=window.location.origin+window.location.pathname+'?src=browse';
+            window.location.href='https://phantom.app/ul/browse/'+encodeURIComponent(target)+'?ref='+encodeURIComponent(window.location.origin); return; }
+          connectBtn.disabled=true; connectBtn.textContent='Opening Phantom\u2026'; setStatus('Opening Phantom \u2014 approve, then you\u2019ll come back here.');
+          PhantomMobile.connect(window.location.origin+window.location.pathname); return;
+        }
+        setStatus('Phantom isn\u2019t reachable here. Open this page in a browser with the <a href="https://phantom.app" target="_blank" rel="noopener">Phantom</a> extension.', 'warn'); return;
+      }
+      connectBtn.disabled=true; connectBtn.textContent='Connecting\u2026';
+      try{ var resp=await provider.connect(); wallet.pubkey=resp.publicKey.toString(); connectBtn.textContent='Connected';
+        setStatus('Connected as <span class="addr">'+shortAddr(wallet.pubkey)+'</span><br/>Checking your $OIL balance\u2026'); checkBalance(wallet.pubkey);
+      }catch(e){ connectBtn.disabled=false; connectBtn.textContent='Connect'; setStatus('Connection cancelled. Tap Connect to try again.', 'warn'); }
+    }
+
+    // ---- play (25 OIL entry) -----------------------------------------------
+    async function onPlay(){
+      if(busy || entrySig) return;
+      if(!canPlay()){ setStatus('Connect a wallet holding at least '+CFG.ENTRY_FEE+' $OIL to play.', 'warn'); return; }
+      busy=true; relabelStartBusy('Sending entry\u2026');
+      try{ var sig=await sendPayment(CFG.ENTRY_FEE, MEMO_TAG+'|entry', 'entry'); if(sig===null) return; onEntryConfirmed(sig); }
+      catch(e){ setStatus('Connected as <span class="addr">'+shortAddr(wallet.pubkey||'')+'</span><br/>'+((e instanceof PayError)?e.userMessage:'Something went wrong sending the entry. No confirmed charge means nothing was taken.'), 'warn');
+        busy=false; relabelStart(); }
+    }
+
+    // handleStart is the entry gate reused by the Paid start card's Play button.
+    function handleStart(){
+      if(mode!=='paid') return false;      // Free: engine runs as normal
+      if(busy || entrySig) return true;    // in-flight or a paid run already armed: block
+      if(!wallet.pubkey){ setStatus('Connect a wallet with at least '+CFG.ENTRY_FEE+' $OIL, then tap Play.', 'warn'); return true; }
+      onPlay(); return true;
+    }
+
+    function onAgain(){ $('postedSheet').classList.remove('show'); window.SparkpedeEngine.idle(); showPaidStart(); }
+
+    // ---- mobile redirect resume (verbatim from Rush/Mr Bot; carries score/waves/timeMs) --
+    async function resume(){
+      var actionParam=new URLSearchParams(window.location.search).get('phantom_action');
+      if(!actionParam){
+        if(!wallet.pubkey && window.PhantomMobile && PhantomMobile.hasSession()){ wallet.pubkey=PhantomMobile.getSessionPublicKey();
+          connectBtn.textContent='Connected'; connectBtn.disabled=true; setStatus('Connected as <span class="addr">'+shortAddr(wallet.pubkey)+'</span><br/>Checking your $OIL balance\u2026'); checkBalance(wallet.pubkey); }
+        return;
+      }
+      connectBtn.disabled=true; connectBtn.textContent='Finishing\u2026'; setStatus('Almost there \u2014 finishing up with Phantom\u2026');
+      var pending=loadPending(); var marker=pending?pending.marker:'sprk_sign';
+      var result=window.PhantomMobile?PhantomMobile.consumePendingRedirect(marker):null;
+      if(result&&result.type==='connect'){ wallet.pubkey=result.publicKey; connectBtn.textContent='Connected';
+        setStatus('Connected as <span class="addr">'+shortAddr(wallet.pubkey)+'</span><br/>Checking your $OIL balance\u2026'); checkBalance(wallet.pubkey); return; }
+      if(result&&result.type==='signTransaction'&&pending){ connectBtn.textContent='Connected'; connectBtn.disabled=true; if(pending.owner) wallet.pubkey=pending.owner; clearPending();
+        try{ var connection=new solanaWeb3.Connection(CFG.RPC,'confirmed'); var rawSig=await connection.sendRawTransaction(result.txBytes,{ skipPreflight:false });
+          setStatus('Payment sent \u2014 waiting for confirmation\u2026'); var ok=await confirmSignature(connection,rawSig,30000);
+          if(!ok) throw new PayError('Confirmation slow. Signature: '+rawSig+'. Do not pay again \u2014 check it first.');
+          if(pending.action==='entry'){ onEntryConfirmed(rawSig); }
+          else if(pending.action==='score'){ pendingResult={ score:pending.score, waves:pending.waves, timeMs:pending.timeMs }; showPosted(pendingResult); }
+          if(wallet.pubkey) checkBalance(wallet.pubkey);
+        }catch(e){ setStatus('Connected as <span class="addr">'+shortAddr(wallet.pubkey||'')+'</span><br/>'+((e instanceof PayError)?e.userMessage:'Something went wrong after returning from Phantom. Check your wallet activity before retrying.'), 'warn'); }
+        return;
+      }
+      connectBtn.disabled=false; connectBtn.textContent='Connect';
+      setStatus((result&&result.type==='error')?result.message:'The connection didn\u2019t complete \u2014 tap Connect to try again.', 'warn');
+    }
+
+    function init(){
+      if(inited) return; inited=true;
+      connectBtn=$('connectBtn'); walletStatus=$('walletStatus');
+      if(TEST_MODE){ $('testBanner').classList.remove('hidden'); }
+      connectBtn.addEventListener('click', onConnect);
+      $('againBtn').addEventListener('click', onAgain);
+    }
+
+    return { init:init, resume:resume, onRunEnd:onRunEnd, handleStart:handleStart,
+             showPaidStart:showPaidStart, hasSession:function(){ return window.PhantomMobile && PhantomMobile.hasSession(); } };
+  })();
+
+  window.SparkpedePaid = Paid;
+
+  // ===== Mode switching (kid-safety: Paid is a deliberate opt-in) ============
+  var facts=$('facts');
+  var confirmSheet=$('confirmSheet');
+  var FREE_FACTS='Free \u00b7 wallet-free \u00b7 pays nothing';
+  var PAID_FACTS='Paid \u00b7 25 OIL entry \u00b7 one run \u00b7 fun leaderboard (not verified) \u00b7 holders \u00d71.5';
+
+  function setMode(m){
+    mode=m;
+    var f=$('modeFree'), p=$('modePaid');
+    if(m==='free'){
+      document.body.classList.remove('mode-paid');
+      f.classList.add('active'); p.classList.remove('active');
+      if(facts) facts.textContent=FREE_FACTS;
+    } else {
+      document.body.classList.add('mode-paid');
+      p.classList.add('active'); f.classList.remove('active');
+      if(facts) facts.textContent=PAID_FACTS;
+    }
+  }
+
+  $('modeFree').addEventListener('click', function(){ if(mode==='free') return; setMode('free'); window.SparkpedeEngine.resumeFree(); });
+  $('modePaid').addEventListener('click', function(){ if(mode==='paid') return; confirmSheet.classList.add('show'); });
+  $('confirmBack').addEventListener('click', function(){ confirmSheet.classList.remove('show'); });
+  $('confirmEnter').addEventListener('click', function(){ confirmSheet.classList.remove('show'); setMode('paid'); Paid.init(); window.SparkpedeEngine.idle(); Paid.showPaidStart(); if(Paid.hasSession && Paid.hasSession()) Paid.resume(); });
+
+  // ===== On load: Free by default. The wallet layer is only touched when returning
+  // ===== from a Phantom redirect or already inside Phantom's browser (both of which
+  // ===== can ONLY occur after the user opted into Paid). =====================
+  (function boot(){
+    var params=new URLSearchParams(window.location.search);
+    if(params.get('phantom_action') || params.get('src')==='browse'){ setMode('paid'); Paid.init(); window.SparkpedeEngine.idle(); Paid.showPaidStart(); Paid.resume(); }
+    else { setMode('free'); }
+  })();
+})();
+</script>
+</body>
+</html>
