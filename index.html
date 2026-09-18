@@ -759,10 +759,17 @@ if(!HEADLESS){
     ctx.fillStyle=col; ctx.fillRect(cx-3,cy-2,2,2); ctx.fillRect(cx+2,cy-2,2,2); }
   function draw(){
     ctx.clearRect(0,0,VIEW.w,VIEW.h);
-    ctx.fillStyle='#1a1030'; ctx.fillRect(0,0,VIEW.w,VIEW.h);
-    // band divider
-    ctx.fillStyle='rgba(58,111,247,.10)'; ctx.fillRect(0,bandTopPx(),VIEW.w,VIEW.h-bandTopPx());
-    ctx.fillStyle='rgba(58,111,247,.35)'; ctx.fillRect(0,bandTopPx(),VIEW.w,1);
+    // deep-space gradient + faint grid (the mushroom field reads better with depth)
+    const bg=ctx.createLinearGradient(0,0,0,VIEW.h);
+    bg.addColorStop(0,'#241546'); bg.addColorStop(0.55,'#1a1030'); bg.addColorStop(1,'#120a24');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,VIEW.w,VIEW.h);
+    ctx.strokeStyle='rgba(160,232,240,.045)'; ctx.lineWidth=1; ctx.beginPath();
+    for(let gx=GRID.cell;gx<VIEW.w;gx+=GRID.cell){ ctx.moveTo(gx+.5,0); ctx.lineTo(gx+.5,VIEW.h); }
+    for(let gy=GRID.cell;gy<VIEW.h;gy+=GRID.cell){ ctx.moveTo(0,gy+.5); ctx.lineTo(VIEW.w,gy+.5); }
+    ctx.stroke();
+    // player band — a lit electric zone
+    ctx.fillStyle='rgba(58,111,247,.12)'; ctx.fillRect(0,bandTopPx(),VIEW.w,VIEW.h-bandTopPx());
+    ctx.fillStyle='rgba(127,215,255,.45)'; ctx.fillRect(0,bandTopPx(),VIEW.w,1);
 
     // mushrooms
     for(let r=0;r<GRID.rows;r++) for(let c=0;c<GRID.cols;c++){ const m=s.shrooms[idx(c,r)]; if(m.hp>0) drawShroom(c,r,m); }
