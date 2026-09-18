@@ -633,7 +633,7 @@ if(!HEADLESS){
   hero.crossOrigin='anonymous';
   hero.onload=()=>{heroOK=true;};
   hero.onerror=()=>{heroOK=false;};
-  if(CFG.spriteBase && CFG.spriteBase.indexOf('REPLACE_')!==0){ hero.src=CFG.spriteBase+'/'+CFG.hero+'.png'; }
+  hero.src='assets/hero/bot-106.png';   // background-keyed transparent 106 (no cyan box on the field)
 
   let s=newRun(); let flash=0; let fx=[];
   // active gates the sim: Free auto-plays (true on load); Paid idles until entry.
