@@ -202,7 +202,7 @@ body:not(.mode-paid) .facts{display:none!important}
       <div class="tag">a FinnBots game</div>
       <div class="links">
         <a href="https://magiceden.io/marketplace/finnbot" target="_blank" rel="noopener">Buy a Bot</a>·
-        <a href="https://games.finnstergram.com/" target="_blank" rel="noopener">More games</a>·
+        <a href="https://finnstergram.com/games" target="_blank" rel="noopener">More games</a>·
         <a href="https://spark.finnstergram.com/leaderboard.html" target="_blank" rel="noopener">Leaderboard</a>
       </div>
     </footer>
@@ -240,7 +240,7 @@ body:not(.mode-paid) .facts{display:none!important}
   <!-- Kid-safety confirm gate (shown BEFORE any wallet code runs) -->
   <div class="sheet" id="confirmSheet"><div class="panel">
     <h2>Play Sparkpede — Paid</h2>
-    <p>One entry = one run (3 lives, no continues). Costs <b>25 OIL</b> to the treasury (a sink). Pays nothing out — you're playing for a leaderboard spot. Bot holders: score ×1.5.<br/><br/>A <b>fun ranking</b> — not verified.</p>
+    <p>One entry = one run (3 lives + a bonus life every 12,000, no continues). Costs <b>25 OIL</b> to the treasury (a sink). Pays nothing out — you're playing for a leaderboard spot. Bot holders: score ×1.5.<br/><br/>A <b>fun ranking</b> — not verified.</p>
     <button class="again" id="confirmEnter" type="button">Connect &amp; Pay</button>
     <button class="ghostbtn" id="confirmBack" type="button">Cancel</button>
   </div></div>
@@ -326,7 +326,9 @@ const SCORPION = { fromWave:3, everyMs:12000, speedX:85, r:9, rowMin:6, rowMax:1
 
 /* ---- SCORE (higher = better; scanner applies holder x1.5 to `score`) ------ */
 const SCORE = { body:10, head:100, shroom:1, spiderNear:900, spiderMid:600, spiderFar:300,
-                flea:200, scorpion:1000, waveBonus:50 };
+                flea:200, scorpion:1000 };
+/* arcade Centipede: a bonus life EVERY 12,000 points (no wave-clear bonus exists) */
+const EXTRA_EVERY = 12000;
 
 /* ---- deterministic RNG (everyone plays the same board) -------------------- */
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
@@ -379,7 +381,7 @@ function newRun(){
     phase:'ready',                 // 'ready' | 'play' | 'dead'
     rnd,
     wave:1, wavesCleared:0,
-    score:0, lives:DIFFICULTY.lives, timeMs:0,
+    score:0, lives:DIFFICULTY.lives, timeMs:0, nextExtra:EXTRA_EVERY,
     readyTimer:DIFFICULTY.readyMs,
     shrooms:makeField(rnd),
     pedes:[], pedeTimer:0,
@@ -561,7 +563,6 @@ function loseLife(s){
 
 function nextWave(s){
   s.wavesCleared++; s.wave++;
-  s.score+=SCORE.waveBonus*s.wave;
   s.shots=[];
   spawnWave(s);
   s.phase='ready'; s.readyTimer=DIFFICULTY.readyMs;
@@ -573,6 +574,7 @@ function stepGame(s, dtMs){
              scorpion:false, life:false, waveClear:false, over:false };
   if(s.phase==='dead') return ev;
   const dt=dtMs/1000; s.timeMs+=dtMs;
+  while(s.score>=s.nextExtra){ s.lives++; s.nextExtra+=EXTRA_EVERY; ev.extra=true; }   // arcade: a life every 12,000
 
   moveBlaster(s, dt);
 
@@ -646,7 +648,7 @@ if(!HEADLESS){
   hero.crossOrigin='anonymous';
   hero.onload=()=>{heroOK=true;};
   hero.onerror=()=>{heroOK=false;};
-  hero.src='assets/hero/bot-106.png';   // background-keyed transparent 106 (no cyan box on the field)
+  if(CFG.spriteBase && CFG.spriteBase.indexOf('REPLACE_')!==0){ hero.src=CFG.spriteBase+'/'+CFG.hero+'.png'; }
 
   let s=newRun(); let flash=0; let fx=[];
   // active gates the sim: Free auto-plays (true on load); Paid idles until entry.
@@ -731,11 +733,13 @@ if(!HEADLESS){
   // ---- HUD ---------------------------------------------------------------
   const elScore=document.getElementById('score'), elWave=document.getElementById('wave'),
         elLives=document.getElementById('lives');
-  function buildLives(){ elLives.innerHTML=''; for(let i=0;i<DIFFICULTY.lives;i++){ const d=document.createElement('span'); d.className='life'; elLives.appendChild(d);} }
-  buildLives();
+  function buildLives(n){ elLives.innerHTML=''; for(let i=0;i<n;i++){ const d=document.createElement('span'); d.className='life'; elLives.appendChild(d);} }
+  buildLives(DIFFICULTY.lives);
   function syncHUD(){
     elScore.textContent=pad(s.score,6);
     elWave.textContent=pad(s.wave,2);
+    // bonus lives (every 12,000) can push the count past the starting 3 — grow the row
+    if(elLives.children.length < Math.min(s.lives,8)) buildLives(Math.min(s.lives,8));
     const dots=elLives.children;
     for(let i=0;i<dots.length;i++) dots[i].className='life'+(i<s.lives?'':' off');
   }
@@ -743,74 +747,46 @@ if(!HEADLESS){
   // ---- render ------------------------------------------------------------
   function drawShroom(gx,gy,m){
     const x=gx*GRID.cell, y=gy*GRID.cell, c=GRID.cell;
-    const base=m.poison?CFG.poison:CFG.shroom, dk=m.poison?'#7a3fb0':'#3f9d6a';
-    // stalk (outlined)
-    ctx.fillStyle='#241a12'; ctx.fillRect(x+c*0.40,y+c*0.48,c*0.20,c*0.44);
-    ctx.fillStyle='#5a4636'; ctx.fillRect(x+c*0.44,y+c*0.50,c*0.10,c*0.40);
+    const base=m.poison?CFG.poison:CFG.shroom;
+    ctx.fillStyle='#3a2b1e'; ctx.fillRect(x+c*0.42,y+c*0.5,c*0.16,c*0.42);   // stalk
     // cap fades as HP drops
-    ctx.globalAlpha=0.45+0.55*(m.hp/FIELD.shroomHP);
-    ctx.fillStyle='#120a22'; ctx.fillRect(x+c*0.12,y+c*0.20,c*0.76,c*0.38);   // outline
-    ctx.fillStyle=base;      ctx.fillRect(x+c*0.15,y+c*0.22,c*0.70,c*0.32);   // cap
-    ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fillRect(x+c*0.15,y+c*0.22,c*0.70,c*0.07); // top gloss
-    ctx.fillStyle=dk; ctx.fillRect(x+c*0.15,y+c*0.50,c*0.70,c*0.04);           // underside shadow
-    ctx.fillStyle='rgba(255,255,255,.6)'; ctx.fillRect(x+c*0.30,y+c*0.30,2,2); ctx.fillRect(x+c*0.58,y+c*0.34,2,2); // spots
+    ctx.globalAlpha=0.4+0.6*(m.hp/FIELD.shroomHP);
+    ctx.fillStyle=base; ctx.fillRect(x+c*0.15,y+c*0.22,c*0.7,c*0.34);
+    ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillRect(x+c*0.15,y+c*0.22,c*0.7,c*0.08);
     ctx.globalAlpha=1;
   }
   function drawDisc(cx,cy,r,fill,ring){
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=fill; ctx.fill();
     if(ring){ ctx.lineWidth=1.5; ctx.strokeStyle=ring; ctx.stroke(); }
   }
-  // Shared FinnBot look: outlined round chip with a highlight + shadow speck.
-  const OUT='#120a22';
-  function chipBot(cx,cy,r,base,hi,sh){
-    ctx.beginPath(); ctx.arc(cx,cy,r+1,0,6.283); ctx.fillStyle=OUT; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,6.283); ctx.fillStyle=base; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx-r*0.32,cy-r*0.32,r*0.42,0,6.283); ctx.fillStyle=hi; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx+r*0.38,cy+r*0.4,r*0.3,0,6.283); ctx.fillStyle=sh; ctx.fill();
-  }
-  function eyes(cx,cy,col){ ctx.fillStyle=OUT; ctx.fillRect(cx-4,cy-3,3,3); ctx.fillRect(cx+1,cy-3,3,3);
-    ctx.fillStyle=col; ctx.fillRect(cx-3,cy-2,2,2); ctx.fillRect(cx+2,cy-2,2,2); }
   function draw(){
     ctx.clearRect(0,0,VIEW.w,VIEW.h);
-    // deep-space gradient + faint grid (the mushroom field reads better with depth)
-    const bg=ctx.createLinearGradient(0,0,0,VIEW.h);
-    bg.addColorStop(0,'#241546'); bg.addColorStop(0.55,'#1a1030'); bg.addColorStop(1,'#120a24');
-    ctx.fillStyle=bg; ctx.fillRect(0,0,VIEW.w,VIEW.h);
-    ctx.strokeStyle='rgba(160,232,240,.045)'; ctx.lineWidth=1; ctx.beginPath();
-    for(let gx=GRID.cell;gx<VIEW.w;gx+=GRID.cell){ ctx.moveTo(gx+.5,0); ctx.lineTo(gx+.5,VIEW.h); }
-    for(let gy=GRID.cell;gy<VIEW.h;gy+=GRID.cell){ ctx.moveTo(0,gy+.5); ctx.lineTo(VIEW.w,gy+.5); }
-    ctx.stroke();
-    // player band — a lit electric zone
-    ctx.fillStyle='rgba(58,111,247,.12)'; ctx.fillRect(0,bandTopPx(),VIEW.w,VIEW.h-bandTopPx());
-    ctx.fillStyle='rgba(127,215,255,.45)'; ctx.fillRect(0,bandTopPx(),VIEW.w,1);
+    ctx.fillStyle='#1a1030'; ctx.fillRect(0,0,VIEW.w,VIEW.h);
+    // band divider
+    ctx.fillStyle='rgba(58,111,247,.10)'; ctx.fillRect(0,bandTopPx(),VIEW.w,VIEW.h-bandTopPx());
+    ctx.fillStyle='rgba(58,111,247,.35)'; ctx.fillRect(0,bandTopPx(),VIEW.w,1);
 
     // mushrooms
     for(let r=0;r<GRID.rows;r++) for(let c=0;c<GRID.cols;c++){ const m=s.shrooms[idx(c,r)]; if(m.hp>0) drawShroom(c,r,m); }
 
-    // scorpion — violet poison-bot with a stinger tail + antennae
-    if(s.scorpion){ const sc=s.scorpion, d=(sc.vx||1)>0?1:-1;
-      ctx.strokeStyle=OUT; ctx.lineWidth=2; ctx.beginPath();
-      ctx.moveTo(sc.x-d*sc.r,sc.y); ctx.lineTo(sc.x-d*sc.r*1.7,sc.y-sc.r*0.9); ctx.stroke();   // tail
-      chipBot(sc.x,sc.y,sc.r,'#c77dff','#ecd0ff','#7a3fb0'); eyes(sc.x,sc.y,'#3a1050');
-      ctx.fillStyle=OUT; ctx.fillRect(sc.x+d*sc.r-1,sc.y-sc.r-2,2,3); }               // pincer nub
-    // flea — red drop-bot with little legs
-    if(s.flea){ const fl=s.flea; ctx.strokeStyle=OUT; ctx.lineWidth=1;
-      for(let i=-1;i<2;i++){ ctx.beginPath(); ctx.moveTo(fl.x+i*3,fl.y+fl.r-1); ctx.lineTo(fl.x+i*3,fl.y+fl.r+2); ctx.stroke(); }
-      chipBot(fl.x,fl.y,fl.r,'#ff6b6b','#ffc9c9','#b03030'); eyes(fl.x,fl.y,'#5a0e0e'); }
-    // spider — violet crawler with 4 legs each side + eyes
-    if(s.spider){ const sp=s.spider; ctx.strokeStyle=OUT; ctx.lineWidth=1.5;
+    // scorpion
+    if(s.scorpion){ const sc=s.scorpion; drawDisc(sc.x,sc.y,sc.r,'#8a5a2b','#f2d0a0');
+      ctx.fillStyle='#f2a03d'; ctx.fillRect(sc.x-sc.r,sc.y-1,sc.r*2,2); }
+    // flea
+    if(s.flea){ const fl=s.flea; drawDisc(fl.x,fl.y,fl.r,'#d94f4f','#ffd0d0'); }
+    // spider
+    if(s.spider){ const sp=s.spider; drawDisc(sp.x,sp.y,sp.r,'#7a4bd0','#d9c2ff');
+      ctx.strokeStyle='#d9c2ff'; ctx.lineWidth=1;
       for(let a=0;a<4;a++){ const ang=a*0.7+0.3; ctx.beginPath();
-        ctx.moveTo(sp.x-Math.cos(ang)*sp.r,sp.y); ctx.lineTo(sp.x-Math.cos(ang)*sp.r*1.9,sp.y+Math.sin(ang)*sp.r);
-        ctx.moveTo(sp.x+Math.cos(ang)*sp.r,sp.y); ctx.lineTo(sp.x+Math.cos(ang)*sp.r*1.9,sp.y+Math.sin(ang)*sp.r); ctx.stroke(); }
-      chipBot(sp.x,sp.y,sp.r,'#8a5be0','#d9c2ff','#4a2a90'); eyes(sp.x,sp.y,'#ff5cc8'); }
+        ctx.moveTo(sp.x-Math.cos(ang)*sp.r,sp.y); ctx.lineTo(sp.x-Math.cos(ang)*sp.r*1.8,sp.y+Math.sin(ang)*sp.r);
+        ctx.moveTo(sp.x+Math.cos(ang)*sp.r,sp.y); ctx.lineTo(sp.x+Math.cos(ang)*sp.r*1.8,sp.y+Math.sin(ang)*sp.r); ctx.stroke(); } }
 
-    // pede segments — chained FinnBots; the head has a bright screen-face
+    // pede segments
     for(const p of s.pedes){ for(let i=0;i<p.segs.length;i++){ const g=p.segs[i];
       if(g.gy<0||g.gy>=GRID.rows) continue;
       const cx=cellCx(g.gx), cy=cellCy(g.gy), head=(i===0);
-      if(head){ chipBot(cx,cy,PEDE.segR,'#ffd27a','#fff0c8','#b07a20'); eyes(cx,cy,'#7a4a10'); }
-      else    { chipBot(cx,cy,PEDE.segR,CFG.danger,'#ffb0a0','#a03030');
-                ctx.fillStyle='#7a1f14'; ctx.fillRect(cx-2,cy-1,4,2); }                // body rivet
+      drawDisc(cx,cy,PEDE.segR, head?'#ffd27a':CFG.danger, '#7a4a10');
+      if(head){ ctx.fillStyle='#3e2a10'; ctx.fillRect(cx-3,cy-2,2,2); ctx.fillRect(cx+1,cy-2,2,2); } // eyes
     } }
 
     // sparks
@@ -877,6 +853,7 @@ if(!HEADLESS){
         if(ev.hitPede){ blip('pede'); }
         if(ev.hitShroom){ blip('shroom'); }
         if(ev.spider||ev.flea||ev.scorpion) blip('bonus');
+        if(ev.extra) blip('bonus');
         if(ev.waveClear) blip('bonus');
         if(ev.life||s.lives<before){ flash=1; blip('life'); }
         acc-=FIXED;
@@ -893,8 +870,6 @@ if(!HEADLESS){
   requestAnimationFrame(frame);
 })();
 }
-/* Auto-open the How-To as an intro on first load (skip Phantom redirect returns). */
-try{var _bpIntro=new URLSearchParams(location.search);if(!_bpIntro.get('phantom_action')&&_bpIntro.get('src')!=='browse'){addEventListener('load',function(){var b=document.getElementById('infoBtn');if(b)b.click();});}}catch(e){}
 </script>
 
 <!-- Shared wallet libs (loaded once; the wallet LOGIC stays dead until Paid is chosen — mirrors live Mr Bot / Rush). -->
@@ -1062,7 +1037,7 @@ try{var _bpIntro=new URLSearchParams(location.search);if(!_bpIntro.get('phantom_
     function showPaidStart(){
       entrySig=null; pendingResult=null; busy=false; lockModeToggle(false);
       var ov=$('paidOverlay'); ov.classList.add('show');
-      ov.innerHTML='<div class="card"><h2>SPARKPEDE \u2014 PAID</h2><p>25 OIL entry \u00b7 one run (3 lives, no continues) \u00b7 fun leaderboard, not verified. Zap the Sparkpede, clear waves \u2014 holders \u00d71.5.</p>'+
+      ov.innerHTML='<div class="card"><h2>SPARKPEDE \u2014 PAID</h2><p>25 OIL entry \u00b7 one run (3 lives + a bonus life every 12,000, no continues) \u00b7 fun leaderboard, not verified. Zap the Sparkpede, clear waves \u2014 holders \u00d71.5.</p>'+
         '<button class="btn" id="paidPlayBtn">Play (25 OIL)</button></div>';
       $('paidPlayBtn').addEventListener('click', function(){ handleStart(); });
       relabelStart();
