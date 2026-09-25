@@ -546,7 +546,7 @@ canvas{ touch-action:none; }
 <script>
 "use strict";
 /* ==========================================================================
-   SPARKPEDE — FinnBots (Atari Centipede, faithful).  ENGINE (Free gameplay).
+   SPARKPEDE — FinnBots (the trackball-shooter original, faithful).  ENGINE (Free gameplay).
    Bot 106 is the BLASTER at the foot of the field. You only MOVE him inside the
    bottom band (drag / arrows); sparks auto-fire upward. The Sparkpede winds down
    through a mushroom field — shoot a segment and it turns into a mushroom and
@@ -617,7 +617,7 @@ const SCORPION = { fromWave:3, everyMs:12000, speedX:85, r:9, rowMin:6, rowMax:1
 /* ---- SCORE (higher = better; scanner applies holder x1.5 to `score`) ------ */
 const SCORE = { body:10, head:100, shroom:1, spiderNear:900, spiderMid:600, spiderFar:300,
                 flea:200, scorpion:1000 };
-/* arcade Centipede: a bonus life EVERY 12,000 points (no wave-clear bonus exists) */
+/* arcade the trackball-shooter original: a bonus life EVERY 12,000 points (no wave-clear bonus exists) */
 const EXTRA_EVERY = 12000;
 
 /* ---- deterministic RNG (everyone plays the same board) -------------------- */
@@ -1089,7 +1089,7 @@ if(!HEADLESS){
     ctx.save();
     ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.closePath();
     if(heroOK){ ctx.fillStyle='#1a1030'; ctx.fill(); ctx.clip();
-      const d=R*2; ctx.drawImage(hero, b.x-d/2, b.y-d/2, d, d);   // arcade parity: in Centipede the
+      const d=R*2; ctx.drawImage(hero, b.x-d/2, b.y-d/2, d, d);   // arcade parity: in the trackball-shooter original the
       // Bug Blaster and a centipede segment share one 8x8 grid cell, so the hero must not be
       // drawn larger than the segments (was R*2+4 = 22 against a 16px segment).
     } else { ctx.fillStyle=CFG.accent; ctx.fill();
