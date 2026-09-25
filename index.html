@@ -1089,7 +1089,9 @@ if(!HEADLESS){
     ctx.save();
     ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.closePath();
     if(heroOK){ ctx.fillStyle='#1a1030'; ctx.fill(); ctx.clip();
-      const d=R*2+4; ctx.drawImage(hero, b.x-d/2, b.y-d/2, d, d);
+      const d=R*2; ctx.drawImage(hero, b.x-d/2, b.y-d/2, d, d);   // arcade parity: in Centipede the
+      // Bug Blaster and a centipede segment share one 8x8 grid cell, so the hero must not be
+      // drawn larger than the segments (was R*2+4 = 22 against a 16px segment).
     } else { ctx.fillStyle=CFG.accent; ctx.fill();
       ctx.fillStyle='#fff'; ctx.font='9px "Jersey 15", monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText('106', b.x, b.y); }
