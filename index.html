@@ -930,6 +930,13 @@ if(HEADLESS){
 if(!HEADLESS){
 (function(){
   const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+  /* SUPERSAMPLED BACKING STORE (2026-09-25): backed at SS x the game's own size with the
+     context scaled by SS, so every existing draw call still works in game units while
+     fillText gets SS times the pixels. SS is an integer, so pixel art still lands on whole
+     device pixels. fitCanvas only touches cv.style, so the CSS size is unchanged. */
+  const SS=3;
+  { const _w=cv.width, _h=cv.height; cv.width=_w*SS; cv.height=_h*SS;
+    ctx.setTransform(SS,0,0,SS,0,0); ctx.imageSmoothingEnabled=false; }
   ctx.imageSmoothingEnabled=false;
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -938,7 +945,7 @@ if(!HEADLESS){
   hero.crossOrigin='anonymous';
   hero.onload=()=>{heroOK=true;};
   hero.onerror=()=>{heroOK=false;};
-  if(CFG.spriteBase && CFG.spriteBase.indexOf('REPLACE_')!==0){ hero.src=CFG.spriteBase+'/'+CFG.hero+'.png'; }
+  hero.src='assets/hero/bot-106.png';   /* the LOCAL keyed Bot 106: transparent background, no runtime Arweave fetch */
 
   let s=newRun(); let flash=0; let fx=[];
   // active gates the sim: Free auto-plays (true on load); Paid idles until entry.
