@@ -75,7 +75,10 @@
   /* Play surface */
   .surface{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
   canvas{
-    width:100%;height:auto;max-height:100%;
+    /* never BOTH dimensions at 100%: that overrides aspect-ratio and stretches
+       the bitmap. Two max- constraints letterbox a replaced element correctly
+       on their own; fitCanvas then makes it exact. */
+    max-width:100%;max-height:100%;
     aspect-ratio:3/4; background:#1a1030; border-radius:var(--r-lg);
     box-shadow:var(--sh2); image-rendering:pixelated; image-rendering:crisp-edges;
     touch-action:none;
@@ -935,9 +938,43 @@ if(!HEADLESS){
      fillText gets SS times the pixels. SS is an integer, so pixel art still lands on whole
      device pixels. fitCanvas only touches cv.style, so the CSS size is unchanged. */
   const SS=3;
+  const BASE_W=cv.width, BASE_H=cv.height;   // the game's own size, before the supersample
   { const _w=cv.width, _h=cv.height; cv.width=_w*SS; cv.height=_h*SS;
     ctx.setTransform(SS,0,0,SS,0,0); ctx.imageSmoothingEnabled=false; }
   ctx.imageSmoothingEnabled=false;
+
+  /* ---- LETTERBOX ---------------------------------------------------------
+     This file carried the comment "fitCanvas only touches cv.style, so the CSS
+     size is unchanged" and NO fitCanvas: the supersample block was copied from a
+     game that had one and the function never came with it. So the canvas was
+     sized by CSS alone — `width:100%; height:auto; max-height:100%` against an
+     `aspect-ratio:3/4`. On a laptop the max-height clamp wins, the aspect-ratio
+     is ignored, and this 300x400 PORTRAIT field is stretched across a box about
+     2.5:1: mushrooms smeared into wide bars, the Sparkpede a squashed blob, the
+     blaster marooned in the corner. Fifteen other games size the element
+     explicitly for exactly this reason; do the same and the ratio cannot be
+     violated at any window size. */
+  function fitCanvas(){
+    const host=cv.parentElement; if(!host) return;
+    /* Measure the host's CONTENT box, not its border box. getBoundingClientRect
+       includes padding — the shared device layer puts 12px on .surface — so
+       fitting to it asked for 24px more height than existed. `max-height:100%`
+       then clamped the height while the width stayed, and the canvas was
+       stretched all over again, just less obviously (0.778 against 0.750). */
+    const cs=getComputedStyle(host);
+    const padX=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0);
+    const padY=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
+    const availW=host.clientWidth-padX, availH=host.clientHeight-padY;
+    if(availW<=0 || availH<=0) return;
+    const ar=BASE_W/BASE_H;
+    let w=availW, h=w/ar;
+    if(h>availH){ h=availH; w=h*ar; }
+    cv.style.width=Math.max(60,Math.floor(w))+'px';
+    cv.style.height=Math.max(80,Math.floor(w/ar))+'px';   // derive H from the FINAL W
+  }
+  addEventListener('resize',fitCanvas);
+  addEventListener('orientationchange',fitCanvas);
+  fitCanvas(); setTimeout(fitCanvas,120); setTimeout(fitCanvas,500);
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // hero sprite: real Bot 106 rides the blaster; numbered-swatch fallback (FDL rule)
