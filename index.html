@@ -307,7 +307,7 @@ canvas{ touch-action:none; }
    turned that off for a pointer that IS a cursor, so a laptop kept thumb-sized
    keys it never needed. Measured at 1440x900 across the served roster: ten
    games carry a control block over 90px tall — RIVETBOT 152, BOTMAN/BURROBOT/
-   Mrs Bot 142, BotFord/DRUM PUSH/HOP 106 136 — and every one of those canvases
+   Mrs Bot 142, BotFord/DRUM PUSH/HOPBOT 136 — and every one of those canvases
    is HEIGHT-BOUND, so each pixel of pad comes straight out of the play area.
    The pad stays (people do click it), it just stops being a thumb rest.
    Measured gain: +4.6% to +8.5% canvas height on eight games, and because the
@@ -559,7 +559,7 @@ canvas{ touch-action:none; }
       '.fb-seed-btn:focus-visible{outline:2px solid #3a6ff7;outline-offset:2px}' +
       '.fb-seed .s{display:none}' +
       /* The game's own NAME outranks this chip. At 375px the long label pushed
-       * "WING 106" out of the topbar and left the title rendering as "W..",
+       * "WINGBOT" out of the topbar and left the title rendering as "W..",
        * so below 560px the chip drops the date and uses its short label. A
        * badge that costs a game its title is not worth the information. */
       '@media (max-width:560px){.fb-seed{font-size:10px;padding:3px 3px 3px 7px;gap:4px}' +
@@ -601,7 +601,7 @@ canvas{ touch-action:none; }
      2. CABINET — the canvas reads as an arcade screen: bezel, amber rim light, glow.
      3. THEME  — dark-mode parity with the hub (games.finnstergram.com adapts, the
                  games did not, so hub -> game was a light/dark slap in the face).
-   v2: the PIXEL bot mark (16x16 monitor head, magenta smile — the face of Bots #106/#20)
+   v3: the PIXEL bot mark is Bot 2969, the main character (full colour, 16x16, outlined)
    shared with finnstergram.com and the hub, and a NIGHT-MODE SWITCH in the topbar.
    Section 4 below is written ONCE; apply-brand.js emits it twice — for "the device is
    dark and the player has not chosen light", and for "the switch says dark" — scoping
@@ -1046,7 +1046,7 @@ body:not(.mode-paid) .app .facts{ display:block !important; }
 <body>
   <div class="wrap">
     <header class="topbar">
-      <!--fb:pill--><a class="fb-mark" href="https://games.finnstergram.com" aria-label="FinnBots — more games"><svg class="fb-bot" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 1h2v2H7zM2 3h12v1H2zM1 4h14v9H1zM2 13h12v1H2zM0 7h1v3H0zM15 7h1v3h-1z"/><path fill="var(--fb-amber)" d="M7 0h2v1H7z"/><path fill="var(--fb-screen)" d="M2 5h12v7H2z"/><path fill="var(--fb-face,#ff4fd8)" d="M4 6h2v1H4zM3 7h1v2H3zM6 7h1v2H6zM10 6h2v1h-2zM9 7h1v2H9zM12 7h1v2h-1zM4 10h1v1H4zM11 10h1v1h-1zM5 11h6v1H5z"/></svg><span class="fb-word">FINN<i>BOTS</i></span></a><button class="fb-theme" type="button" role="switch" aria-checked="false" aria-label="Night mode"><span class="fbt-track" aria-hidden="true"><span class="fbt-thumb"><svg class="fbt-sun" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#e8891c" d="M2 2h3v3H2zM3 0h1v1H3zM3 6h1v1H3zM0 3h1v1H0zM6 3h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM5 5h1v1H5z"/></svg><svg class="fbt-moon" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#3d3f9e" d="M2 0h3v1H2zM1 1h2v1H1zM0 2h2v3H0zM1 5h2v1H1zM2 6h3v1H2zM4 5h2v1H4z"/></svg></span></span></button><!--/fb-->
+      <!--fb:pill--><a class="fb-mark" href="https://games.finnstergram.com" aria-label="FinnBots — more games"><svg class="fb-bot" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#2a2350" d="M2 2h12v1H2zM1 3h1v1H1zM14 3h1v1H14zM0 4h1v1H0zM15 4h1v1H15zM0 5h1v1H0zM15 5h1v1H15zM0 6h1v1H0zM15 6h1v1H15zM0 7h1v1H0zM15 7h1v1H15zM0 8h1v1H0zM15 8h1v1H15zM0 9h1v1H0zM15 9h1v1H15zM0 10h1v1H0zM15 10h1v1H15zM0 11h1v1H0zM15 11h1v1H15zM0 12h1v1H0zM15 12h1v1H15zM1 13h1v1H1zM14 13h1v1H14zM2 14h12v1H2z"/><path fill="#ff8fc8" d="M3 0h2v1H3zM11 0h2v1H11zM3 1h2v1H3zM11 1h2v1H11z"/><path fill="#8fd3f5" d="M2 3h12v1H2zM1 4h14v1H1zM1 5h14v1H1zM1 6h14v1H1zM1 7h14v1H1zM1 8h14v1H1zM1 9h14v1H1zM1 10h14v1H1zM1 11h14v1H1zM1 12h14v1H1zM2 13h12v1H2z"/><path fill="#5aa9d6" d="M1 4h3v1H1zM1 5h3v1H1zM1 6h3v1H1zM1 7h3v1H1zM1 8h3v1H1zM1 9h3v1H1zM1 10h3v1H1zM1 11h3v1H1zM1 12h3v1H1z"/><path fill="#fff" d="M3 5h4v1H3zM9 5h4v1H9zM3 6h4v1H3zM9 6h4v1H9zM3 7h4v1H3zM9 7h4v1H9z"/><path fill="#2a2350" d="M4 5h1v1H4zM11 5h1v1H11zM4 6h2v1H4zM10 6h2v1H10z"/><path fill="#fff" d="M4 10h8v1H4zM4 11h8v1H4z"/><path fill="#2a2350" d="M6 10h1v1H6zM8 10h1v1H8zM10 10h1v1H10zM6 11h1v1H6zM8 11h1v1H8zM10 11h1v1H10z"/></svg><span class="fb-word">FINN<i>BOTS</i></span></a><button class="fb-theme" type="button" role="switch" aria-checked="false" aria-label="Night mode"><span class="fbt-track" aria-hidden="true"><span class="fbt-thumb"><svg class="fbt-sun" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#e8891c" d="M2 2h3v3H2zM3 0h1v1H3zM3 6h1v1H3zM0 3h1v1H0zM6 3h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM5 5h1v1H5z"/></svg><svg class="fbt-moon" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#3d3f9e" d="M2 0h3v1H2zM1 1h2v1H1zM0 2h2v3H0zM1 5h2v1H1zM2 6h3v1H2zM4 5h2v1H4z"/></svg></span></span></button><!--/fb-->
       <h1 class="title">SPARKPEDE</h1>
       <button class="iconbtn" id="infoBtn" aria-label="How to play">ⓘ</button>
     </header>
@@ -1073,7 +1073,7 @@ body:not(.mode-paid) .app .facts{ display:block !important; }
     </div>
 
     <main class="surface">
-      <canvas id="game" width="300" height="400" aria-label="Sparkpede play area. Bot 106 is the blaster at the foot of the field. Drag left, right, up and down to move him; hold FIRE, Space or the mouse button to shoot sparks upward. Zap the descending Sparkpede, spider, flea and scorpion before they reach you."></canvas>
+      <canvas id="game" width="300" height="400" aria-label="Sparkpede play area. Bot 2969 is the blaster at the foot of the field. Drag left, right, up and down to move him; hold FIRE, Space or the mouse button to shoot sparks upward. Zap the descending Sparkpede, spider, flea and scorpion before they reach you."></canvas>
     </main>
 
     <div class="controls fireonly" aria-label="Controls">
@@ -1102,7 +1102,7 @@ body:not(.mode-paid) .app .facts{ display:block !important; }
     <div class="card">
       <h2 id="rulesTitle">HOW TO PLAY</h2>
       <ul class="rules">
-        <li><b>Drag</b> anywhere in the bottom band (or use ← → ↑ ↓) to move 106. <b>Hold FIRE</b> (the button, Space, or the mouse button) to shoot — it repeats while held.</li>
+        <li><b>Drag</b> anywhere in the bottom band (or use ← → ↑ ↓) to move 2969. <b>Hold FIRE</b> (the button, Space, or the mouse button) to shoot — it repeats while held.</li>
         <li>The <b>Sparkpede</b> winds down through the mushrooms. Shoot a segment and it becomes a mushroom, <b>splitting</b> the chain — heads score most.</li>
         <li>Mushrooms take <b>4 hits</b>. They steer the pede and clutter your band.</li>
         <li>Watch the <b>spider</b> (roams your band), the <b>flea</b> (drops straight down) and the <b>scorpion</b> (poisons mushrooms — a poisoned mushroom sends the pede plunging).</li>
@@ -1146,7 +1146,7 @@ body:not(.mode-paid) .app .facts{ display:block !important; }
 "use strict";
 /* ==========================================================================
    SPARKPEDE — FinnBots (the trackball-shooter original, faithful).  ENGINE (Free gameplay).
-   Bot 106 is the BLASTER at the foot of the field. You only MOVE him inside the
+   Bot 2969 is the BLASTER at the foot of the field. You only MOVE him inside the
    bottom band (drag / arrows) and HOLD FIRE to shoot, as on the cabinet's fire
    button — held, it repeats at a finite cadence. The Sparkpede winds down
    through a mushroom field — shoot a segment and it turns into a mushroom and
@@ -1167,9 +1167,9 @@ body:not(.mode-paid) .app .facts{ display:block !important; }
 const CFG = {
   name:'Sparkpede', memoNS:'SPRK', chassis:'sink-leaderboard',
   subdomain:'spark.finnstergram.com', port:9012,
-  hero:106,
+  hero:2969,
   spriteBase:'https://arweave.net/_cPSCheRvzVBlZK7QwM-3nXtteMdBbUn-zJhbGRlMmo',
-  accent:'#3a6ff7',   // Electric — the spark / blaster (echoes #106)
+  accent:'#3a6ff7',   // Electric — the spark / blaster (echoes #2969)
   danger:'#f2a03d',   // Amber — the Sparkpede + hazards
   shroom:'#a0f0c0',   // Cam-green — mushrooms
   poison:'#c77dff',   // Violet — poisoned mushrooms
@@ -1584,12 +1584,12 @@ if(!HEADLESS){
   fitCanvas(); setTimeout(fitCanvas,120); setTimeout(fitCanvas,500);
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // hero sprite: real Bot 106 rides the blaster; numbered-swatch fallback (FDL rule)
+  // hero sprite: real Bot 2969 rides the blaster; numbered-swatch fallback (FDL rule)
   const hero=new Image(); let heroOK=false;
   hero.crossOrigin='anonymous';
   hero.onload=()=>{heroOK=true;};
   hero.onerror=()=>{heroOK=false;};
-  hero.src='assets/hero/bot-106.png';   /* the LOCAL keyed Bot 106: transparent background, no runtime Arweave fetch */
+  hero.src='assets/hero/bot-2969.png';   /* the LOCAL keyed Bot 2969: transparent background, no runtime Arweave fetch */
 
   /* EVERY run the page builds is dealt from today's seed (the daily-seed layer, fb-seed, is in <head>
        so FB_SEED exists before this line runs). A bare newRun() — the old restart() and the run built
@@ -1755,7 +1755,7 @@ if(!HEADLESS){
     for(const sh of s.shots){ ctx.fillRect(sh.x-1.5, sh.y-5, 3, 8);
       ctx.fillStyle='rgba(160,232,240,.9)'; ctx.fillRect(sh.x-1, sh.y-6, 2, 3); ctx.fillStyle=CFG.accent; }
 
-    // blaster = Bot 106 (round token, sprite clipped in; amber fallback)
+    // blaster = Bot 2969 (round token, sprite clipped in; amber fallback)
     const b=s.blaster, R=DIFFICULTY.blasterW/2;
     ctx.save();
     ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.closePath();
@@ -1765,7 +1765,7 @@ if(!HEADLESS){
       // drawn larger than the segments (was R*2+4 = 22 against a 16px segment).
     } else { ctx.fillStyle=CFG.accent; ctx.fill();
       ctx.fillStyle='#fff'; ctx.font='9px "Jersey 15", monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('106', b.x, b.y); }
+      ctx.fillText('2969', b.x, b.y); }
     ctx.restore();
     ctx.beginPath(); ctx.arc(b.x,b.y,R,0,Math.PI*2); ctx.lineWidth=1.5; ctx.strokeStyle='rgba(160,232,240,.95)'; ctx.stroke();
     ctx.fillStyle=CFG.accent; ctx.fillRect(b.x-1.5,b.y-R-3,3,4);   // muzzle
