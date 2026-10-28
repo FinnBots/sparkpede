@@ -1211,7 +1211,7 @@ body:not(.mode-paid) .app .facts{ display:block !important; }
   <!-- Kid-safety confirm gate (shown BEFORE any wallet code runs) -->
   <div class="sheet" id="confirmSheet"><div class="panel">
     <h2>Play Sparkpede — Paid</h2>
-    <p>One entry = one run (3 lives + a bonus life every 12,000, no continues). It costs <b>25 OIL</b>, which is spent: it is not paid back and there is no prize. You're playing for a place on the leaderboard. If your wallet holds a FinnBot, your score counts ×1.5.<br/><br/>Needs a grown-up's crypto wallet. A <b>fun ranking</b>, not an official one.</p>
+    <p>One entry = one run (3 lives + a bonus life every 12,000, no continues). It costs <b>25 OIL</b>, which is spent: it is not paid back and there is no prize. You're playing for a place on the leaderboard. Everyone is ranked on the same real score; if your wallet holds a FinnBot, you also get a Bot holders table of your own.<br/><br/>Needs a grown-up's crypto wallet. A <b>fun ranking</b>, not an official one.</p>
     <button class="again" id="confirmEnter" type="button">Connect &amp; Pay</button>
     <button class="ghostbtn" id="confirmBack" type="button">Cancel</button>
   </div></div>
@@ -1581,7 +1581,7 @@ var FBFoes = (function(){
    are FINITE, while the pede's step speed grows UNBOUNDED per wave (baseStepMs *
    waveMult^(wave-1), waveMult<1) and each wave is longer with more loose heads.
    Past some wave the descent structurally outruns any finite blaster — a better
-   player just reaches a higher wave. Rank = score (scanner applies holder x1.5);
+   player just reaches a higher wave. Rank = score (the real score: R6 retired the holder x1.5);
    tiebreak = time. The engine references NO wallet/RPC/memo/money symbol. Same
    contract as the other sink games (window.SparkpedeEngine {start,idle,resumeFree});
    hands the result to the Paid layer via onRunEnd. Every number lives in config.
@@ -1638,7 +1638,7 @@ const FLEA = { bandThreshold:5, checkMs:2200, vy:130, speedUp:1.7, r:8, dropChan
 /* ---- SCORPION: crosses mid-field, poisons mushrooms (pede then plunges) --- */
 const SCORPION = { fromWave:3, everyMs:12000, speedX:85, r:9, rowMin:6, rowMax:13 };
 
-/* ---- SCORE (higher = better; scanner applies holder x1.5 to `score`) ------ */
+/* ---- SCORE (higher = better; ranked as-is, R6 retired the holder x1.5) ------ */
 const SCORE = { body:10, head:100, shroom:1, spiderNear:900, spiderMid:600, spiderFar:300,
                 flea:200, scorpion:1000 };
 /* arcade the trackball-shooter original: a bonus life EVERY 12,000 points (no wave-clear bonus exists) */
